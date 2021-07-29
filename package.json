@@ -1,0 +1,41 @@
+{
+  "name": "wsdebug",
+  "version": "0.0.2",
+  "description": "使用websocket对远程页面进行debug调试",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint --fix ./index.js ./src ./gulpfile.js",
+    "build": "gulp build"
+  },
+  "keywords": [
+    "websocket",
+    "debug"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cgb1021/wsdebug.git"
+  },
+  "homepage": "https://github.com/cgb1021/wsdebug#readme",
+  "author": "chenguibiao",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.10.5",
+    "@babel/plugin-transform-runtime": "^7.14.3",
+    "@babel/preset-env": "^7.10.4",
+    "babel-loader": "^8.2.2",
+    "babel-plugin-istanbul": "^6.0.0",
+    "del": "^5.1.0",
+    "eslint": "^7.31.0",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-replace": "^1.1.3",
+    "gulp-uglify": "^3.0.2",
+    "gulp-util": "^3.0.8",
+    "rollup": "^2.50.2",
+    "uglify-js": "^3.13.9"
+  },
+  "dependencies": {
+    "espree": "^8.0.0",
+    "sockjs": "^0.3.21"
+  }
+}
