@@ -63,9 +63,15 @@ module.exports = function (port = 8081) {
               store.ids.push(id);
             }
           } else {
+            if (sessionStore.id && sessionStore.id !== id) {
+              delete connection.client[sessionStore.id];
+              if (store.ids.indexOf(sessionStore.id) > -1 && connection.master) {
+                toMaster(event.CONNECTED, connection.master, `${sessionStore.id}/0`);
+              }
+            }
             if (typeof connection.client[id] === 'undefined') {
-              sessionStore.id = id;
               connection.client[id] = conn;
+              sessionStore.id = id;
               if (store.ids.indexOf(id) > -1 && connection.master) {
                 toUser(event.CONNECTED, conn, 1);
                 toMaster(event.CONNECTED, connection.master, `${id}/1`);
