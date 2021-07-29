@@ -5,7 +5,6 @@ module.exports = function (port = 8081) {
   const event = {
     CONNECTED: 'connected',
     SCRIPT: 'script',
-    RESULT: 'result',
     ERROR: 'error'
   };
   const error = (err, conn) => {
@@ -97,16 +96,18 @@ module.exports = function (port = 8081) {
         case 'script':
           broadcast(event.SCRIPT, message);
           break;
-        case 'result': {
-          const id = sessionStore.id;
-          if (id && store.ids.indexOf(id) > -1 && connection.master) {
-            toMaster(event.RESULT, connection.master, message);
+        default: {
+          if (sessionStore.role === 'master') {
+            broadcast('', message);
           } else {
-            error(new Error('Master not connected'), conn);
+            const id = sessionStore.id;
+            if (id && store.ids.indexOf(id) > -1 && connection.master) {
+              toMaster('', connection.master, message);
+            } else {
+              error(new Error('Master not connected'), conn);
+            }
           }
         }
-          break;
-        default: conn.write(0);
         }
       }
     });
