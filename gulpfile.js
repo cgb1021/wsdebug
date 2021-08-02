@@ -23,7 +23,10 @@ gulp.task('rollup', () => {
     return bundle.write({
       file: './dist/index.js',
       format: 'umd',
-      name: 'wsdebug'
+      name: 'wsdebug',
+      globals: {
+        espree: 'espree'
+      }
     });
   });
 });
