@@ -20,18 +20,25 @@ const client = new Client();
 client.on('open', () => {
   client.setId(`uid_123456`);
 })
-client.on('connected', (data) => {
+client.on('connect', (data) => {
   console.log('master connected', data);
 })
 client.register('dosomething', dosomething);
+window.test = function () {
+  console.log('test');
+  return 'window.test';
+}
 ```
 
 ## step3. master
 ```
 import { Master } from 'wsdebug/es';
-master.on('connected', (data) => {
+master.on('connect', (data) => {
   console.log(`[${data.id}]`, data.value);
   master.run('dosomething("test")', (msg) => {
+    console.log('result', msg);
+  })
+  master.run('window.test()', (msg) => {
     console.log('result', msg);
   })
 })

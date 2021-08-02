@@ -1,7 +1,7 @@
 export const protocol = {
   script: 'script://',
   result: 'result://',
-  connected: 'connected://',
+  connect: 'connect://',
   close: 'close://',
   id: 'id://',
   role: 'role://',

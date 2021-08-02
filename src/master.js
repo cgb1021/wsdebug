@@ -61,7 +61,7 @@ function Master(host = '127.0.0.1', port = 8081) {
   };
   this.on = function(type, func, revmoe) {
     switch (type) {
-    case 'connected': if (typeof func === 'function') {
+    case 'connect': if (typeof func === 'function') {
       const index = connectedCallbacks.indexOf(func);
       if (!revmoe && index === -1) {
         connectedCallbacks.push(func);
