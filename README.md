@@ -33,6 +33,10 @@ window.test = function () {
 ## step3. master
 ```
 import { Master } from 'wsdebug/es';
+const master = new Master();
+master.on('open', () => {
+  master.connect('uid_123456');
+})
 master.on('connect', (data) => {
   console.log(`[${data.id}]`, data.value);
   master.run('dosomething("test")', (msg) => {
@@ -42,5 +46,71 @@ master.on('connect', (data) => {
     console.log('result', msg);
   })
 })
-master.connect('uid_123456');
+```
+
+## API
+### server
+
+```
+@param {String} port
+server()
+```
+### client
+
+```
+@description: constructor
+@param {String} host
+@param {String} port
+Client()
+
+@description: bind function context
+@param {Object} self
+bind()
+
+@description: register function
+@param {String} name
+@param {Function} func
+register()
+
+@description: client id
+@param {String} id
+setId()
+
+@return {String}
+getId()
+
+close()
+
+@param {String} msg
+send()
+
+@description: query master
+query()
+```
+
+### master
+
+```
+@description: constructor
+@param {String} host
+@param {String} port
+Master()
+
+@description: eval client scripts
+@param {String} script
+@param {Function} callback
+run()
+
+@description: connect client
+@param {String} id
+connect()
+
+close()
+
+@description: send message to connected clients
+@param {String} msg
+send()
+
+@description: query clients
+query()
 ```
