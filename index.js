@@ -5,7 +5,8 @@ module.exports = function (port = 8081) {
   const event = {
     CONNECT: 'connect',
     SCRIPT: 'script',
-    ERROR: 'error'
+    ERROR: 'error',
+    QUERY: 'query'
   };
   const error = (err, conn) => {
     // console.log(err);
@@ -16,12 +17,15 @@ module.exports = function (port = 8081) {
     client: {}
   };
   const store = {
-    ids: []
+    ids: [],
+    userIds: []
   };
   const echo = sockjs.createServer();
   function toUser(type, conn, data) {
     switch (type) {
     case event.CONNECT: conn.write(`${event.CONNECT}://${data}`);
+      break;
+    case event.QUERY: conn.write(`${event.QUERY}://${data}`);
       break;
     default: conn.write(data);
     }
@@ -29,6 +33,8 @@ module.exports = function (port = 8081) {
   function toMaster(type, conn, data) {
     switch (type) {
     case event.CONNECT: conn.write(`${event.CONNECT}://${data}`);
+      break;
+    case event.QUERY: conn.write(`${event.QUERY}://${data}`);
       break;
     default: conn.write(data);
     }
@@ -65,6 +71,7 @@ module.exports = function (port = 8081) {
           } else {
             if (sessionStore.id && sessionStore.id !== id) {
               delete connection.client[sessionStore.id];
+              store.userIds.splice(store.userIds.indexOf(sessionStore.id), 1);
               if (store.ids.indexOf(sessionStore.id) > -1 && connection.master) {
                 toMaster(event.CONNECT, connection.master, `${sessionStore.id}/0`);
               }
@@ -72,6 +79,7 @@ module.exports = function (port = 8081) {
             if (typeof connection.client[id] === 'undefined') {
               connection.client[id] = conn;
               sessionStore.id = id;
+              store.userIds.push(id);
               if (store.ids.indexOf(id) > -1 && connection.master) {
                 toUser(event.CONNECT, conn, 1);
                 toMaster(event.CONNECT, connection.master, `${id}/1`);
@@ -81,7 +89,7 @@ module.exports = function (port = 8081) {
             }
           }
         }
-          break;
+          return;
         case 'role': {
           const role = data !== 'client' ? 'master' : 'client';
           if (sessionStore.role !== role) {
@@ -98,22 +106,27 @@ module.exports = function (port = 8081) {
           }
           sessionStore.role = role;
         }
-          break;
-        case 'script':
+          return;
+        case event.SCRIPT:
           broadcast(event.SCRIPT, message);
-          break;
-        default: {
+          return;
+        case event.QUERY:
           if (sessionStore.role === 'master') {
-            broadcast('', message);
+            toMaster(event.QUERY, connection.master, store.userIds.join(','));
           } else {
-            const id = sessionStore.id;
-            if (id && store.ids.indexOf(id) > -1 && connection.master) {
-              toMaster('', connection.master, message);
-            } else {
-              error(new Error('Master not connected'), conn);
-            }
+            toUser(event.QUERY, conn, connection.master ? 1 : 0);
           }
+          return;
         }
+      }
+      if (sessionStore.role === 'master') {
+        broadcast('', message);
+      } else {
+        const id = sessionStore.id;
+        if (id && store.ids.indexOf(id) > -1 && connection.master) {
+          toMaster('', connection.master, message);
+        } else {
+          error(new Error('Master not connected'), conn);
         }
       }
     });
@@ -128,6 +141,7 @@ module.exports = function (port = 8081) {
           toMaster(event.CONNECT, connection.master, `${id}/0`);
         }
         delete connection.client[id];
+        store.userIds.splice(store.userIds.indexOf(id), 1);
       }
     });
   });

@@ -6,5 +6,8 @@ export default {
   },
   send: function(msg) {
     this.socket.send(`${protocol.result}${msg}`);
+  },
+  query: function() {
+    this.socket.send(`${protocol.query}1`);
   }
 };
