@@ -42,6 +42,14 @@ function Master(host = '127.0.0.1', port = 8081) {
       });
     }
     if (!data.indexOf(protocol.error)) {
+      const reg = new RegExp(`^${protocol.error}(?:(\\w+)/)?(.+)$`);
+      const match = data.match(reg);
+      if (match) {
+        const id = match[1];
+        if (id && callbackMap[id]) {
+          delete callbackMap[id];
+        }
+      }
       console.error(data.substr(protocol.error.length));
     }
   });

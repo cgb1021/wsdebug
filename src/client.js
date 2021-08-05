@@ -21,6 +21,22 @@ function Client(host = '127.0.0.1', port = 8081) {
         const id = match[1];
         const script = match[2];
         let result = void 0;
+        const send = (err, res) => {
+          if (err) {
+            const msg = err.message ? err.message : 'error';
+            if (id) {
+              this.socket.send(`${protocol.error}${id}/${msg}`);
+            } else {
+              this.socket.send(`${protocol.error}${msg}`);
+            }
+            return;
+          }
+          if (id) {
+            this.socket.send(`${protocol.result}${id}/${res}`);
+          } else {
+            this.socket.send(`${protocol.result}${res}`);
+          }
+        };
         try {
           const res = espree.parse(script);
           let bCalled = false;
@@ -41,11 +57,16 @@ function Client(host = '127.0.0.1', port = 8081) {
           }
         } catch (e) {
           console.error(e);
+          send(e);
+          return;
         }
-        if (id) {
-          this.socket.send(`${protocol.result}${id}/${result}`);
+        if (result instanceof Promise) {
+          result.then((res) => send(null, res)).catch((e) => {
+            console.error(e);
+            send(e);
+          });
         } else {
-          this.socket.send(`${protocol.result}${result}`);
+          send(null, result);
         }
       }
     }
