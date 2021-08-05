@@ -27,10 +27,10 @@ function Master(host = '127.0.0.1', port = 8081) {
         }
       }
     }
-    if (!data.indexOf(protocol.connected)) {
+    if (!data.indexOf(protocol.connect)) {
       let arr = new Array(2);
       try {
-        arr = data.substr(protocol.connected.length).split('/');
+        arr = data.substr(protocol.connect.length).split('/');
       } catch (e) {
         console.error(e);
       }

@@ -74,6 +74,7 @@ module.exports = function (port = 8081) {
               store.userIds.splice(store.userIds.indexOf(sessionStore.id), 1);
               if (store.ids.indexOf(sessionStore.id) > -1 && connection.master) {
                 toMaster(event.CONNECT, connection.master, `${sessionStore.id}/0`);
+                toUser(event.CONNECT, conn, 0);
               }
             }
             if (typeof connection.client[id] === 'undefined') {

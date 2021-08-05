@@ -49,8 +49,8 @@ function Client(host = '127.0.0.1', port = 8081) {
         }
       }
     }
-    if (!data.indexOf(protocol.connected)) {
-      const val = data.substr(protocol.connected.length);
+    if (!data.indexOf(protocol.connect)) {
+      const val = data.substr(protocol.connect.length);
       connectedCallbacks.forEach((fn) => {
         fn(val);
       });
