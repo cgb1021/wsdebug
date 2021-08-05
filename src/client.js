@@ -31,6 +31,9 @@ function Client(host = '127.0.0.1', port = 8081) {
             }
             return;
           }
+          if (typeof res === 'object') {
+            res = JSON.stringify(res);
+          }
           if (id) {
             this.socket.send(`${protocol.result}${id}/${res}`);
           } else {

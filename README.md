@@ -24,6 +24,9 @@ client.on('connect', (data) => {
   console.log('master connected', data);
 })
 client.register('dosomething', dosomething);
+client.register('doasync', () => {
+  return new Promise()
+});
 window.test = function () {
   console.log('test');
   return 'window.test';
