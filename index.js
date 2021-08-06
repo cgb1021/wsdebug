@@ -12,14 +12,11 @@ module.exports = function (port = 8081) {
     // console.log(err);
     conn && conn.write(`${event.ERROR}://${err.message ? err.message : 'error'}`);
   };
-  const connection = {
-    master: null,
-    client: {}
+  const master = {
+    connection: null,
+    ids: []
   };
-  const store = {
-    ids: [],
-    userIds: []
-  };
+  const clients = [];
   const echo = sockjs.createServer();
   function toUser(type, conn, data) {
     switch (type) {
@@ -40,9 +37,10 @@ module.exports = function (port = 8081) {
     }
   }
   function broadcast (type, data) {
-    store.ids.forEach(function (id) {
-      if (typeof connection.client[id] !== 'undefined') {
-        toUser(type, connection.client[id], data);
+    if (!master.ids.length) return;
+    clients.forEach((item) => {
+      if (master.ids.indexOf(item.id) > -1) {
+        toUser(type, item.connection, data);
       }
     });
   }
@@ -50,7 +48,7 @@ module.exports = function (port = 8081) {
   echo.on('connection', function(conn) {
     const sessionStore = {
       role: 'client',
-      id: 0
+      index: -1
     };
     conn.on('data', function(message) {
       const match = message.match(/^(\w+):\/\/(.+)$/);
@@ -61,32 +59,46 @@ module.exports = function (port = 8081) {
         case 'id': {
           const id = data;
           if (sessionStore.role === 'master') {
-            if (typeof connection.client[id] !== 'undefined') {
-              toUser(event.CONNECT, connection.client[id], 1);
-              toMaster(event.CONNECT, conn, `${id}/1`);
+            if (master.ids.indexOf(id) === -1) {
+              master.ids.push(id);
+            } else {
+              return;
             }
-            if (store.ids.indexOf(id) === -1) {
-              store.ids.push(id);
+            let counter = 0;
+            clients.forEach((item) => {
+              if (item.id === id) {
+                counter++;
+                toUser(event.CONNECT, item.connection, 1);
+              }
+            });
+            if (counter) {
+              toMaster(event.CONNECT, conn, `${id}/${counter}`);
             }
           } else {
-            if (sessionStore.id && sessionStore.id !== id) {
-              delete connection.client[sessionStore.id];
-              store.userIds.splice(store.userIds.indexOf(sessionStore.id), 1);
-              if (store.ids.indexOf(sessionStore.id) > -1 && connection.master) {
-                toMaster(event.CONNECT, connection.master, `${sessionStore.id}/0`);
-                toUser(event.CONNECT, conn, 0);
-              }
-            }
-            if (typeof connection.client[id] === 'undefined') {
-              connection.client[id] = conn;
-              sessionStore.id = id;
-              store.userIds.push(id);
-              if (store.ids.indexOf(id) > -1 && connection.master) {
-                toUser(event.CONNECT, conn, 1);
-                toMaster(event.CONNECT, connection.master, `${id}/1`);
-              }
+            let res = -1;
+            let oldId;
+            if (sessionStore.index === -1) {
+              const info = {
+                id,
+                connection: conn
+              };
+              sessionStore.index = clients.push(info) - 1;
             } else {
-              error(new Error('User already exists'), conn);
+              const info = clients[sessionStore.index];
+              if (info.id === id) {
+                return;
+              }
+              oldId = info.id;
+              info.id = id;
+            }
+            if (master.ids.indexOf(id) > -1) {
+              res = 1;
+            } else if (oldId && master.ids.indexOf(oldId) > -1) {
+              res = 0;
+            }
+            if (res > -1) {
+              toMaster(event.CONNECT, master.connection, `${res ? id : oldId}/${res}`);
+              toUser(event.CONNECT, conn, res);
             }
           }
         }
@@ -94,15 +106,16 @@ module.exports = function (port = 8081) {
         case 'role': {
           const role = data !== 'client' ? 'master' : 'client';
           if (sessionStore.role !== role) {
-            if (role === 'master' && !connection.master) {
-              connection.master = conn;
+            if (role === 'master' && !master.connection) {
+              master.connection = conn;
             } else {
               error(new Error('Master already exists'), conn);
+              return;
             }
             if (role === 'client') {
-              connection.master = null;
+              master.connection = null;
               broadcast(event.CONNECT, 0);
-              store.ids.length = 0;
+              master.ids.length = 0;
             }
           }
           sessionStore.role = role;
@@ -113,9 +126,13 @@ module.exports = function (port = 8081) {
           return;
         case event.QUERY:
           if (sessionStore.role === 'master') {
-            toMaster(event.QUERY, connection.master, store.userIds.join(','));
+            let idsString = '';
+            clients.forEach((item) => {
+              idsString += `,${item.id}`;
+            });
+            toMaster(event.QUERY, master.connection, idsString.substr(1));
           } else {
-            toUser(event.QUERY, conn, connection.master ? 1 : 0);
+            toUser(event.QUERY, conn, master.connection ? 1 : 0);
           }
           return;
         }
@@ -123,9 +140,9 @@ module.exports = function (port = 8081) {
       if (sessionStore.role === 'master') {
         broadcast('', message);
       } else {
-        const id = sessionStore.id;
-        if (id && store.ids.indexOf(id) > -1 && connection.master) {
-          toMaster('', connection.master, message);
+        const id = clients[sessionStore.index].id;
+        if (id && master.ids.indexOf(id) > -1 && master.connection) {
+          toMaster('', master.connection, message);
         } else {
           error(new Error('Master not connected'), conn);
         }
@@ -133,16 +150,17 @@ module.exports = function (port = 8081) {
     });
     conn.on('close', function() {
       if (sessionStore.role === 'master') {
-        connection.master = null;
+        master.connection = null;
         broadcast(event.CONNECT, 0);
-        store.ids.length = 0;
-      } else if (sessionStore.id) {
-        const id = sessionStore.id;
-        if (store.ids.indexOf(id) > -1 && connection.master) {
-          toMaster(event.CONNECT, connection.master, `${id}/0`);
+        master.ids.length = 0;
+      } else if (sessionStore.index > -1) {
+        const item = clients[sessionStore.index];
+        const id = item.id;
+        if (master.ids.indexOf(id) > -1 && master.connection) {
+          toMaster(event.CONNECT, master.connection, `${id}/0`);
         }
-        delete connection.client[id];
-        store.userIds.splice(store.userIds.indexOf(id), 1);
+        item.connection = null;
+        clients.splice(sessionStore.index, 1);
       }
     });
   });
