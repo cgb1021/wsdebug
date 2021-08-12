@@ -16,7 +16,7 @@ module.exports = function (port = 8081) {
     connection: null,
     ids: []
   };
-  const clients = [];
+  const clients = {};
   const echo = sockjs.createServer();
   function toUser(type, conn, data) {
     switch (type) {
@@ -38,18 +38,33 @@ module.exports = function (port = 8081) {
   }
   function broadcast (type, data) {
     if (!master.ids.length) return;
-    clients.forEach((item) => {
-      if (master.ids.indexOf(item.id) > -1) {
-        toUser(type, item.connection, data);
-      }
+    Object.keys(clients).forEach((key) => {
+      const client = clients[key];
+      let bSend = false;
+      client.ids.forEach((id) => {
+        if (!bSend && master.ids.indexOf(id) > -1) {
+          toUser(type, client.connection, data);
+          bSend = true;
+        }
+      });
     });
   }
 
   echo.on('connection', function(conn) {
     const sessionStore = {
       role: 'client',
-      index: -1
+      id: Date.now() * 10000 + Math.floor(Math.random() * 10000)
     };
+    while (sessionStore.id) {
+      if (typeof clients[sessionStore.id] === 'undefined') {
+        clients[sessionStore.id] = {
+          connection: conn,
+          ids: []
+        };
+        break;
+      }
+      sessionStore.id = Date.now() * 10000 + Math.floor(Math.random() * 10000);
+    }
     conn.on('data', function(message) {
       const match = message.match(/^(\w+):\/\/(.+)$/);
       if (match && match.length > 2) {
@@ -57,48 +72,42 @@ module.exports = function (port = 8081) {
         const data = match[2];
         switch (type) {
         case 'id': {
-          const id = data;
+          const arr = data.split(':');
+          const id = arr[0];
+          const opt = arr.length > 1 ? +arr[1] : 1;
           if (sessionStore.role === 'master') {
-            if (master.ids.indexOf(id) === -1) {
-              master.ids.push(id);
-            } else {
+            const index = master.ids.indexOf(id);
+            if ((index > -1 && opt) || (index === -1 && !opt)) {
               return;
             }
+            if (opt) {
+              master.ids.push(id);
+            } else {
+              master.ids.splice(index, 1);
+            }
             let counter = 0;
-            clients.forEach((item) => {
-              if (item.id === id) {
+            Object.keys(clients).forEach((key) => {
+              const client = clients[key];
+              if (client.ids.indexOf(id) > -1) {
                 counter++;
-                toUser(event.CONNECT, item.connection, 1);
+                toUser(event.CONNECT, client.connection, opt);
               }
             });
-            if (counter) {
-              toMaster(event.CONNECT, conn, `${id}/${counter}`);
-            }
+            toMaster(event.CONNECT, conn, `${id}/${counter}`);
           } else {
-            let res = -1;
-            let oldId;
-            if (sessionStore.index === -1) {
-              const info = {
-                id,
-                connection: conn
-              };
-              sessionStore.index = clients.push(info) - 1;
+            const client = clients[sessionStore.id];
+            const index = client.ids.indexOf(id);
+            if ((index > -1 && opt) || (index === -1 && !opt)) {
+              return;
+            }
+            if (opt) {
+              client.ids.push(id);
             } else {
-              const info = clients[sessionStore.index];
-              if (info.id === id) {
-                return;
-              }
-              oldId = info.id;
-              info.id = id;
+              client.ids.splice(index, 1);
             }
             if (master.ids.indexOf(id) > -1) {
-              res = 1;
-            } else if (oldId && master.ids.indexOf(oldId) > -1) {
-              res = 0;
-            }
-            if (res > -1) {
-              toMaster(event.CONNECT, master.connection, `${res ? id : oldId}/${res}`);
-              toUser(event.CONNECT, conn, res);
+              toMaster(event.CONNECT, master.connection, `${id}/${opt}`);
+              toUser(event.CONNECT, conn, opt);
             }
           }
         }
@@ -126,11 +135,11 @@ module.exports = function (port = 8081) {
           return;
         case event.QUERY:
           if (sessionStore.role === 'master') {
-            let idsString = '';
-            clients.forEach((item) => {
-              idsString += `,${item.id}`;
+            let ids = [];
+            Object.keys(clients).forEach((key) => {
+              ids = ids.concat(clients[key].ids);
             });
-            toMaster(event.QUERY, master.connection, idsString.substr(1));
+            toMaster(event.QUERY, master.connection, ids.length ? [...new Set(ids)].join(',') : '');
           } else {
             toUser(event.QUERY, conn, master.connection ? 1 : 0);
           }
@@ -140,9 +149,14 @@ module.exports = function (port = 8081) {
       if (sessionStore.role === 'master') {
         broadcast('', message);
       } else {
-        const id = clients[sessionStore.index].id;
-        if (id && master.ids.indexOf(id) > -1 && master.connection) {
-          toMaster('', master.connection, message);
+        if (master.connection) {
+          let bSend = false;
+          clients[sessionStore.id].ids.forEach((id) => {
+            if (!bSend && master.ids.indexOf(id) > -1) {
+              toMaster('', master.connection, message);
+              bSend = true;
+            }
+          });
         } else {
           error(new Error('Master not connected'), conn);
         }
@@ -153,14 +167,17 @@ module.exports = function (port = 8081) {
         master.connection = null;
         broadcast(event.CONNECT, 0);
         master.ids.length = 0;
-      } else if (sessionStore.index > -1) {
-        const item = clients[sessionStore.index];
-        const id = item.id;
-        if (master.ids.indexOf(id) > -1 && master.connection) {
-          toMaster(event.CONNECT, master.connection, `${id}/0`);
+      } else {
+        const client = clients[sessionStore.id];
+        client.connection = null;
+        if (master.connection) {
+          client.ids.forEach((id) => {
+            if (master.ids.indexOf(id) > -1) {
+              toMaster(event.CONNECT, master.connection, `${id}/0`);
+            }
+          });
         }
-        item.connection = null;
-        clients.splice(sessionStore.index, 1);
+        delete clients[sessionStore.id];
       }
     });
   });
