@@ -1,6 +1,6 @@
 {
   "name": "wsdebug",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "使用websocket对远程页面进行debug调试",
   "main": "index.js",
   "scripts": {

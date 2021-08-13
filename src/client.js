@@ -47,9 +47,25 @@ function Client(host = '127.0.0.1', port = 8081) {
             const fnName = res.body[0].expression.callee.name;
             const func = funcMap[fnName] ? funcMap[fnName] : (typeof window[fnName] === 'function' ? window[fnName] : null);
             if (func) {
+              const getValue = (node) => {
+                if (typeof node.properties !== 'undefined') {
+                  const value = {};
+                  node.properties.forEach((item) => {
+                    value[item.key.name] = getValue(item.value);
+                  });
+                  return value;
+                } else if (typeof node.elements !== 'undefined') {
+                  const value = [];
+                  node.elements.forEach((item) => {
+                    value.push(getValue(item));
+                  });
+                  return value;
+                }
+                return node.value;
+              };
               const args = [];
               res.body[0].expression.arguments.forEach((item) => {
-                args.push(item.value);
+                args.push(getValue(item));
               });
               result = func.apply(null, args);
               bCalled = true;
