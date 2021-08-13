@@ -92,11 +92,12 @@ function Client(host = '127.0.0.1', port = 8081) {
     if (typeof func !== 'function') return;
     funcMap[name] = context ? func.bind(context) : func;
   };
-  this.setId = function(any) {
+  this.setId = function(any, opt = 1) {
     if (any && /^\w+$/.test(any)) {
       id = any;
+      opt = opt === 1 ? 1 : 0;
+      this.socket.send(`${protocol.id}${id}:${opt}`);
     }
-    this.socket.send(`${protocol.id}${id}`);
   };
   this.getId = function() {
     return id;

@@ -62,9 +62,10 @@ function Master(host = '127.0.0.1', port = 8081) {
       this.socket.send(`${protocol.script}${script}`);
     }
   };
-  this.connect = function(id) {
+  this.connect = function(id, opt = 1) {
     if (id) {
-      this.socket.send(`${protocol.id}${id}`);
+      opt = opt === 1 ? 1 : 0;
+      this.socket.send(`${protocol.id}${id}:${opt}`);
     }
   };
   this.on = function(type, func, revmoe) {
