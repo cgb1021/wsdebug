@@ -16,9 +16,14 @@ function dosomething (arg) {
   console.log('do something', arg);
   return Date.now();
 }
+let intervalId = 0
 const client = new Client();
 client.on('open', () => {
   client.setId(`uid_123456`);
+  intervalId = setInterval(() => client.live(), 5000)
+})
+client.on('close', () => {
+  clearInterval(intervalId)
 })
 client.on('connect', (data) => {
   console.log('master connected', data);
@@ -36,9 +41,14 @@ window.test = function () {
 ## step3. master
 ```
 import { Master } from 'wsdebug/es';
+let intervalId = 0;
 const master = new Master();
 master.on('open', () => {
   master.connect('uid_123456');
+  intervalId = setInterval(() => master.live(), 5000)
+})
+client.on('close', () => {
+  clearInterval(intervalId)
 })
 master.on('connect', (data) => {
   console.log(`[${data.id}]`, data.value);
@@ -56,6 +66,7 @@ master.on('connect', (data) => {
 
 ```
 @param {String} port
+@param {Number} timeout 30
 server()
 ```
 ### client

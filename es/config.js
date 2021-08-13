@@ -3,6 +3,7 @@ export const protocol = {
   result: 'result://',
   connect: 'connect://',
   query: 'query://',
+  live: 'live://',
   close: 'close://',
   id: 'id://',
   role: 'role://',

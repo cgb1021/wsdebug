@@ -9,5 +9,8 @@ export default {
   },
   query: function() {
     this.socket.send(`${protocol.query}1`);
+  },
+  live: function() {
+    this.socket.send(`${protocol.live}1`);
   }
 };
