@@ -7,7 +7,8 @@ module.exports = function (port = 8081, timeout = 30) {
     SCRIPT: 'script',
     ERROR: 'error',
     QUERY: 'query',
-    LIVE: 'live'
+    LIVE: 'live',
+    ID: 'id'
   };
   const error = (err, conn) => {
     // console.log(err);
@@ -18,18 +19,17 @@ module.exports = function (port = 8081, timeout = 30) {
   const echo = sockjs.createServer();
   function toUser(type, conn, data) {
     switch (type) {
-    case event.CONNECT: conn.write(`${event.CONNECT}://${data}`);
-      break;
-    case event.QUERY: conn.write(`${event.QUERY}://${data}`);
+    case event.CONNECT:
+    case event.QUERY:
+    case event.ID: conn.write(`${type}://${data}`);
       break;
     default: conn.write(data);
     }
   }
   function toMaster(type, conn, data) {
     switch (type) {
-    case event.CONNECT: conn.write(`${event.CONNECT}://${data}`);
-      break;
-    case event.QUERY: conn.write(`${event.QUERY}://${data}`);
+    case event.CONNECT:
+    case event.QUERY: conn.write(`${type}://${data}`);
       break;
     default: conn.write(data);
     }
@@ -115,9 +115,9 @@ module.exports = function (port = 8081, timeout = 30) {
             } else {
               client.ids.splice(index, 1);
             }
+            toUser(event.ID, conn, client.ids.join(','));
             if (masterId && clients[masterId].ids.indexOf(id) > -1) {
               toMaster(event.CONNECT, clients[masterId].connection, `${id}/${opt}`);
-              toUser(event.CONNECT, conn, opt);
             }
           }
         }

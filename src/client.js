@@ -6,7 +6,7 @@ import * as espree from 'espree';
 function Client(host = '127.0.0.1', port = 8081) {
   const url = `ws://${host}:${port}/websocket`;
   let context = null;
-  let id = Date.now() * 100 + Math.floor(Math.random() * 100);
+  let ids = [];
   const funcMap = {};
   const connectedCallbacks = [];
   this.socket = new WebSocket(url);
@@ -95,6 +95,14 @@ function Client(host = '127.0.0.1', port = 8081) {
         fn(val);
       });
     }
+    if (!data.indexOf(protocol.id)) {
+      const str = data.substr(protocol.id.length);
+      if (str) {
+        ids = str.split(',');
+      } else {
+        ids = [];
+      }
+    }
     if (!data.indexOf(protocol.error)) {
       console.error(data.substr(protocol.error.length));
     }
@@ -110,13 +118,12 @@ function Client(host = '127.0.0.1', port = 8081) {
   };
   this.setId = function(any, opt = 1) {
     if (any && /^\w+$/.test(any)) {
-      id = any;
       opt = opt === 1 ? 1 : 0;
-      this.socket.send(`${protocol.id}${id}:${opt}`);
+      this.socket.send(`${protocol.id}${any}:${opt}`);
     }
   };
   this.getId = function() {
-    return id;
+    return ids;
   };
   this.on = function(type, func, revmoe) {
     switch (type) {
