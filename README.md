@@ -74,7 +74,7 @@ server()
 ```
 @description: constructor
 @param {String} host
-@param {String} port
+@param {Number} port
 @param {Boolean} ssl
 Client()
 
@@ -108,7 +108,7 @@ query()
 ```
 @description: constructor
 @param {String} host
-@param {String} port
+@param {Number} port
 @param {Boolean} ssl
 Master()
 

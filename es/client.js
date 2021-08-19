@@ -15,6 +15,7 @@ function Client(host, port, ssl) {
   this.socket = new WebSocket(url);
   this.socket.addEventListener('error', function (err) {
     console.error(err.message ? err.message : 'websocket error');
+    throw err;
   });
   this.socket.addEventListener('message', ({ data }) => {
     if (!data.indexOf(protocol.script)) {
