@@ -10,12 +10,12 @@ function Master(host, port, ssl) {
   const callbackMap = {};
   const connectedCallbacks = [];
   this.socket = new WebSocket(url);
+  this.socket.addEventListener('error', function (err) {
+    this.socket = null;
+    console.error(err.message ? err.message : 'websocket error');
+  });
   this.socket.addEventListener('open', () => {
     this.socket.send(`${protocol.role}master`);
-  });
-  this.socket.addEventListener('error', function (err) {
-    console.error(err.message ? err.message : 'websocket error');
-    throw err;
   });
   this.socket.addEventListener('message', ({ data }) => {
     if (!data.indexOf(protocol.result)) {
@@ -58,6 +58,7 @@ function Master(host, port, ssl) {
     }
   });
   this.run = function(script, callback) {
+    if (!this.socket) return;
     if (typeof callback === 'function') {
       const id = Date.now() * 100 + Math.floor(Math.random() * 100);
       callbackMap[id] = callback;
@@ -67,12 +68,13 @@ function Master(host, port, ssl) {
     }
   };
   this.connect = function(id, opt = 1) {
-    if (id) {
+    if (this.socket && id) {
       opt = opt === 1 ? 1 : 0;
       this.socket.send(`${protocol.id}${id}:${opt}`);
     }
   };
   this.on = function(type, func, revmoe) {
+    if (!this.socket) return;
     switch (type) {
     case 'connect': if (typeof func === 'function') {
       const index = connectedCallbacks.indexOf(func);
