@@ -3,7 +3,7 @@ import prototype from './prototype';
 import { protocol } from './config';
 import * as espree from 'espree';
 
-function Client(host, port, ssl) {
+function Client(host, port, ssl, onerror) {
   if (!port) {
     port = ssl ? 443 : 8081;
   }
@@ -15,7 +15,11 @@ function Client(host, port, ssl) {
   this.socket = new WebSocket(url);
   this.socket.addEventListener('error', function (err) {
     this.socket = null;
-    console.error(err.message ? err.message : 'websocket error');
+    if (typeof onerror === 'function') {
+      onerror(err);
+    } else {
+      console.error(err.message ? err.message : 'websocket error');
+    }
   });
   this.socket.addEventListener('message', ({ data }) => {
     if (!data.indexOf(protocol.script)) {

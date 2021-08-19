@@ -1,4 +1,4 @@
-module.exports = function (port = 8081, timeout = 30) {
+module.exports = function (port = 80, timeout = 30) {
   const http = require('http');
   const sockjs = require('sockjs');
   // const fs = require('fs');

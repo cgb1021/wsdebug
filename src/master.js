@@ -2,9 +2,9 @@
 import { protocol } from './config';
 import prototype from './prototype';
 
-function Master(host, port, ssl) {
+function Master(host, port, ssl, onerror) {
   if (!port) {
-    port = ssl ? 443 : 8081;
+    port = ssl ? 443 : 80;
   }
   const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   const callbackMap = {};
@@ -12,7 +12,11 @@ function Master(host, port, ssl) {
   this.socket = new WebSocket(url);
   this.socket.addEventListener('error', function (err) {
     this.socket = null;
-    console.error(err.message ? err.message : 'websocket error');
+    if (typeof onerror === 'function') {
+      onerror(err);
+    } else {
+      console.error(err.message ? err.message : 'websocket error');
+    }
   });
   this.socket.addEventListener('open', () => {
     this.socket.send(`${protocol.role}master`);

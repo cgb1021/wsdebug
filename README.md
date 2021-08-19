@@ -76,6 +76,7 @@ server()
 @param {String} host
 @param {Number} port
 @param {Boolean} ssl
+@param {Function} onerror
 Client()
 
 @description: bind function context
@@ -110,6 +111,7 @@ query()
 @param {String} host
 @param {Number} port
 @param {Boolean} ssl
+@param {Function} onerror
 Master()
 
 @description: eval client scripts
