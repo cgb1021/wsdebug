@@ -75,6 +75,7 @@ server()
 @description: constructor
 @param {String} host
 @param {String} port
+@param {Boolean} ssl
 Client()
 
 @description: bind function context
@@ -108,6 +109,7 @@ query()
 @description: constructor
 @param {String} host
 @param {String} port
+@param {Boolean} ssl
 Master()
 
 @description: eval client scripts

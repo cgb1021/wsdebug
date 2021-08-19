@@ -2,8 +2,11 @@
 import { protocol } from './config';
 import prototype from './prototype';
 
-function Master(host = '127.0.0.1', port = 8081) {
-  const url = `ws://${host}:${port}/websocket`;
+function Master(host, port, ssl) {
+  if (!port) {
+    port = ssl ? 443 : 8081;
+  }
+  const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   const callbackMap = {};
   const connectedCallbacks = [];
   this.socket = new WebSocket(url);

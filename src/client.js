@@ -3,8 +3,11 @@ import prototype from './prototype';
 import { protocol } from './config';
 import * as espree from 'espree';
 
-function Client(host = '127.0.0.1', port = 8081) {
-  const url = `ws://${host}:${port}/websocket`;
+function Client(host, port, ssl) {
+  if (!port) {
+    port = ssl ? 443 : 8081;
+  }
+  const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   let context = null;
   let ids = [];
   const funcMap = {};
