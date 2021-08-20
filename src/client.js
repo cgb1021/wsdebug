@@ -14,7 +14,6 @@ function Client(host, port, ssl, onerror) {
   const connectedCallbacks = [];
   this.socket = new WebSocket(url);
   this.socket.addEventListener('error', function (err) {
-    this.socket = null;
     if (typeof onerror === 'function') {
       onerror(err);
     } else {
@@ -125,7 +124,7 @@ function Client(host, port, ssl, onerror) {
     funcMap[name] = context ? func.bind(context) : func;
   };
   this.setId = function(any, opt = 1) {
-    if (this.socket && any && /^\w+$/.test(any)) {
+    if (this.socket.readyState === 1 && any && /^\w+$/.test(any)) {
       opt = opt === 1 ? 1 : 0;
       this.socket.send(`${protocol.id}${any}:${opt}`);
     }
@@ -134,7 +133,6 @@ function Client(host, port, ssl, onerror) {
     return ids;
   };
   this.on = function(type, func, revmoe) {
-    if (!this.socket) return;
     switch (type) {
     case 'connect': if (typeof func === 'function') {
       const index = connectedCallbacks.indexOf(func);

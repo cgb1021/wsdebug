@@ -2,15 +2,15 @@ import { protocol } from './config';
 
 export default {
   close: function() {
-    if (this.socket) this.socket.close();
+    this.socket.close();
   },
   send: function(msg) {
-    if (this.socket) this.socket.send(msg);
+    if (this.socket.readyState === 1) this.socket.send(msg);
   },
   query: function() {
-    if (this.socket) this.socket.send(`${protocol.query}1`);
+    if (this.socket.readyState === 1) this.socket.send(`${protocol.query}1`);
   },
   live: function() {
-    if (this.socket) this.socket.send(`${protocol.live}1`);
+    if (this.socket.readyState === 1) this.socket.send(`${protocol.live}1`);
   }
 };

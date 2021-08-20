@@ -11,7 +11,6 @@ function Master(host, port, ssl, onerror) {
   const connectedCallbacks = [];
   this.socket = new WebSocket(url);
   this.socket.addEventListener('error', function (err) {
-    this.socket = null;
     if (typeof onerror === 'function') {
       onerror(err);
     } else {
@@ -62,7 +61,7 @@ function Master(host, port, ssl, onerror) {
     }
   });
   this.run = function(script, callback) {
-    if (!this.socket) return;
+    if (this.socket.readyState !== 1) return;
     if (typeof callback === 'function') {
       const id = Date.now() * 100 + Math.floor(Math.random() * 100);
       callbackMap[id] = callback;
@@ -72,13 +71,12 @@ function Master(host, port, ssl, onerror) {
     }
   };
   this.connect = function(id, opt = 1) {
-    if (this.socket && id) {
+    if (this.socket.readyState === 1 && id) {
       opt = opt === 1 ? 1 : 0;
       this.socket.send(`${protocol.id}${id}:${opt}`);
     }
   };
   this.on = function(type, func, revmoe) {
-    if (!this.socket) return;
     switch (type) {
     case 'connect': if (typeof func === 'function') {
       const index = connectedCallbacks.indexOf(func);
