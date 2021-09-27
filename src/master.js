@@ -3,6 +3,13 @@ import { protocol } from './config';
 import prototype from './prototype';
 
 function Master(host, port, ssl, onerror) {
+  if (arguments.length === 1 && typeof arguments[0] === 'object') {
+    const arg = arguments[0];
+    if (typeof arg.host !== 'undefined') host = arg.host;
+    if (typeof arg.port !== 'undefined') port = arg.port;
+    if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
+    if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
+  }
   if (!port) {
     port = ssl ? 443 : 80;
   }
@@ -28,7 +35,6 @@ function Master(host, port, ssl, onerror) {
         const id = match[1];
         if (id && callbackMap[id]) {
           callbackMap[id](match[2]);
-          delete callbackMap[id];
         } else {
           this.receive(match[2]);
         }
@@ -51,13 +57,14 @@ function Master(host, port, ssl, onerror) {
     if (!data.indexOf(protocol.error)) {
       const reg = new RegExp(`^${protocol.error}(?:(\\w+)/)?(.+)$`);
       const match = data.match(reg);
+      const errStr = data.substr(protocol.error.length);
       if (match) {
         const id = match[1];
         if (id && callbackMap[id]) {
-          delete callbackMap[id];
+          callbackMap[id](null, new Error(errStr));
         }
       }
-      console.error(data.substr(protocol.error.length));
+      console.error(errStr);
     }
   });
   this.run = function(script, callback) {
@@ -66,6 +73,9 @@ function Master(host, port, ssl, onerror) {
       const id = Date.now() * 100 + Math.floor(Math.random() * 100);
       callbackMap[id] = callback;
       this.socket.send(`${protocol.script}${id}/${script}`);
+      setTimeout(() => {
+        delete callbackMap[id];
+      }, 300000); // 5min timeout
     } else {
       this.socket.send(`${protocol.script}${script}`);
     }

@@ -4,6 +4,13 @@ import { protocol } from './config';
 import * as espree from 'espree';
 
 function Client(host, port, ssl, onerror) {
+  if (arguments.length === 1 && typeof arguments[0] === 'object') {
+    const arg = arguments[0];
+    if (typeof arg.host !== 'undefined') host = arg.host;
+    if (typeof arg.port !== 'undefined') port = arg.port;
+    if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
+    if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
+  }
   if (!port) {
     port = ssl ? 443 : 8081;
   }

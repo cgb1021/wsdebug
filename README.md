@@ -5,12 +5,14 @@
 ## step1. server
 ```
 const server = require('wsdebug');
-server();
+server(8081);
 ```
 
 ## step2. client
 ```
 import { Client } from 'wsdebug/es';
+// import { Client } from 'wsdebug/lib';
+
 function dosomething (arg) {
   // do something
   console.log('do something', arg);
@@ -41,6 +43,8 @@ window.test = function () {
 ## step3. master
 ```
 import { Master } from 'wsdebug/es';
+// import { Master } from 'wsdebug/lib';
+
 let intervalId = 0;
 const master = new Master();
 master.on('open', () => {
