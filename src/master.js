@@ -57,14 +57,13 @@ function Master(host, port, ssl, onerror) {
     if (!data.indexOf(protocol.error)) {
       const reg = new RegExp(`^${protocol.error}(?:(\\w+)/)?(.+)$`);
       const match = data.match(reg);
-      const errStr = data.substr(protocol.error.length);
       if (match) {
         const id = match[1];
         if (id && callbackMap[id]) {
-          callbackMap[id](null, new Error(errStr));
+          callbackMap[id](null, new Error(match[2]));
         }
       }
-      console.error(errStr);
+      console.error(data.substr(protocol.error.length));
     }
   });
   this.run = function(script, callback) {
