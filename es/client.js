@@ -74,7 +74,7 @@ function Client(host, port, ssl, onerror) {
               res.body[0].expression.arguments.forEach((item) => {
                 args.push(getValue(item));
               });
-              result = func.apply(null, args);
+              result = func.apply(context, args);
               bCalled = true;
             }
           }
@@ -121,7 +121,7 @@ function Client(host, port, ssl, onerror) {
   };
   this.register = function(name, func) {
     if (typeof func !== 'function') return;
-    funcMap[name] = context ? func.bind(context) : func;
+    funcMap[name] = func;
   };
   this.setId = function(any, opt = 1) {
     if (this.socket.readyState === 1 && any && /^\w+$/.test(any)) {
