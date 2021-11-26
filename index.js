@@ -1,11 +1,9 @@
 module.exports = function (port = 80, timeout = 30) {
   const http = require('http');
   const sockjs = require('sockjs');
-  const { v4: uuidv4 } = require('uuid');
   // const fs = require('fs');
   const event = {
     CONNECT: 'connect',
-    SCRIPT: 'script',
     ERROR: 'error',
     QUERY: 'query',
     LIVE: 'live',
@@ -14,7 +12,7 @@ module.exports = function (port = 80, timeout = 30) {
   const clients = {};
   let masterId = '';
 
-  function sendMessage(conn, data, type) {
+  function sendMessage(conn, data, type = '') {
     switch (type) {
     case event.CONNECT:
     case event.QUERY:
@@ -24,15 +22,14 @@ module.exports = function (port = 80, timeout = 30) {
     default: conn.write(data);
     }
   }
-  function broadcast (type, data) {
+  function broadcast (data, type = '') {
     if (!masterId) return;
     const masterIds = clients[masterId].ids;
     if (!masterIds.length) return;
     Object.keys(clients).forEach((key) => {
       if (key === masterId) return;
       const client = clients[key];
-      let len = client.ids.length - 1;
-      for (; len >= 0; len--) {
+      for (let len = client.ids.length - 1; len >= 0; len--) {
         const id = client.ids[len];
         if (masterIds.indexOf(id) > -1) {
           sendMessage(client.connection, data, type);
@@ -41,36 +38,37 @@ module.exports = function (port = 80, timeout = 30) {
       }
     });
   }
-  function connection (conn) {
-    const session = {
-      id: '',
-      role: 'client',
-      timeoutId: 0
-    };
-    const tryNum = 5;
-    const onTimeout = () => {
-      conn.close();
-      session.timeoutId = 0;
-    };
-    for (let i = 0; i < tryNum; i++) {
-      session.id = uuidv4();
-      if (typeof clients[session.id] === 'undefined') {
-        clients[session.id] = {
-          connection: conn,
-          ids: []
-        };
-        break;
-      }
-      if (i === tryNum - 1) {
-        conn.close();
+  function toMaster (ids, message, type = '') {
+    if (!masterId || !ids.length) return;
+    const master = clients[masterId];
+    const masterIds = master.ids;
+    if (!masterIds.length) return;
+    for (let len = ids.length - 1; len >= 0; len--) {
+      const id = ids[len];
+      if (masterIds.indexOf(id) > -1) {
+        sendMessage(master.connection, message, type);
         return;
       }
     }
+  }
+  function connection (conn) {
+    const sessionId = conn.id;
+    const onTimeout = () => {
+      clients[sessionId].timeoutId = 0;
+      conn.close();
+    };
+    clients[sessionId] = {
+      connection: conn,
+      role: 'client',
+      timeoutId: 0,
+      ids: []
+    };
     if (timeout > 0) {
-      session.timeoutId = setTimeout(onTimeout, timeout * 1000);
+      clients[sessionId].timeoutId = setTimeout(onTimeout, timeout * 1000);
     }
     conn.on('data', function(message) {
       const match = message.match(/^(\w+):\/\/(.+)$/);
+      const client = clients[sessionId];
       if (match && match.length > 2) {
         const type = match[1];
         const data = match[2];
@@ -78,18 +76,28 @@ module.exports = function (port = 80, timeout = 30) {
         case 'id': {
           const arr = data.split(':');
           const id = arr[0];
-          const opt = arr.length > 1 ? +arr[1] : 1;
-          if (session.role === 'master') {
-            const master = clients[session.id];
-            const index = master.ids.indexOf(id);
-            if ((index > -1 && opt) || (index === -1 && !opt)) {
-              return;
-            }
-            if (opt) {
-              master.ids.push(id);
+          if (!id) {
+            // clear
+            if (client.role === 'master') {
+              broadcast(0, event.CONNECT);
             } else {
-              master.ids.splice(index, 1);
+              toMaster(client.ids, 0, event.CONNECT);
             }
+            client.ids.length = 0;
+            return;
+          }
+          // const oldIds = [...client.ids];
+          const opt = arr.length > 1 ? +arr[1] : 1;
+          const index = client.ids.indexOf(id);
+          if ((index > -1 && opt) || (index === -1 && !opt)) {
+            return;
+          }
+          if (opt) {
+            client.ids.push(id);
+          } else {
+            client.ids.splice(index, 1);
+          }
+          if (client.role === 'master') {
             let counter = 0;
             Object.keys(clients).forEach((key) => {
               if (key === masterId) return;
@@ -101,49 +109,36 @@ module.exports = function (port = 80, timeout = 30) {
             });
             sendMessage(conn, `${id}/${counter}`, event.CONNECT);
           } else {
-            const client = clients[session.id];
-            const index = client.ids.indexOf(id);
-            if ((index > -1 && opt) || (index === -1 && !opt)) {
-              return;
-            }
-            if (opt) {
-              client.ids.push(id);
-            } else {
-              client.ids.splice(index, 1);
-            }
             sendMessage(conn, client.ids.join(','), event.ID);
-            if (masterId && clients[masterId].ids.indexOf(id) > -1) {
-              sendMessage(clients[masterId].connection, `${id}/${opt}`, event.CONNECT);
-            }
+            toMaster(client.ids, `${id}/${opt}`, event.CONNECT);
           }
         }
           return;
         case 'role': {
-          const role = data !== 'client' ? 'master' : 'client';
-          if (session.role !== role) {
+          const role = data !== 'master' ? 'client' : 'master';
+          if (client.role !== role) {
+            // client -> master
             if (role === 'master' && (!masterId || typeof clients[masterId] === 'undefined')) {
-              masterId = session.id;
+              masterId = sessionId;
             } else {
-              sendMessage(conn, 'Master already exists', event.ERROR);
+              sendMessage(conn, 'Master exists', event.ERROR);
               return;
             }
+            // master -> client
             if (role === 'client') {
-              broadcast(event.CONNECT, 0);
+              broadcast(0, event.CONNECT);
               masterId = '';
             }
-            clients[session.id].ids.length = 0;
+            client.ids.length = 0;
           }
-          session.role = role;
+          client.role = role;
         }
           return;
-        case event.SCRIPT:
-          broadcast(event.SCRIPT, message);
-          return;
         case event.QUERY:
-          if (session.role === 'master') {
+          if (client.role === 'master') {
             let ids = [];
             Object.keys(clients).forEach((key) => {
-              if (+key === session.id) return;
+              if (key === sessionId) return;
               ids = ids.concat(clients[key].ids);
             });
             sendMessage(conn, ids.length ? [...new Set(ids)].join(',') : '', event.QUERY);
@@ -153,47 +148,31 @@ module.exports = function (port = 80, timeout = 30) {
           return;
         case event.LIVE:
           if (timeout > 0) {
-            clearTimeout(session.timeoutId);
-            session.timeoutId = setTimeout(onTimeout, timeout * 1000);
+            clearTimeout(client.timeoutId);
+            client.timeoutId = setTimeout(onTimeout, timeout * 1000);
           }
           return;
         }
       }
-      if (session.role === 'master') {
-        broadcast('', message);
+      if (client.role === 'master') {
+        broadcast(message);
+      } else if (masterId) {
+        toMaster(client.ids, message);
       } else {
-        if (masterId) {
-          let bSend = false;
-          const master = clients[masterId];
-          clients[session.id].ids.forEach((id) => {
-            if (!bSend && master.ids.indexOf(id) > -1) {
-              sendMessage(master.connection, message);
-              bSend = true;
-            }
-          });
-        } else {
-          sendMessage(conn, 'Master not connected', event.ERROR);
-        }
+        sendMessage(conn, 'Master disconnected', event.ERROR);
       }
     });
     conn.on('close', function() {
-      if (session.timeoutId) clearTimeout(session.timeoutId);
-      const role = session.role;
-      const id = session.id;
-      const client = clients[id];
-      if (role === 'master') {
-        broadcast(event.CONNECT, 0);
+      const client = clients[sessionId];
+      if (client.timeoutId) clearTimeout(client.timeoutId);
+      if (client.role === 'master') {
+        broadcast(0, event.CONNECT);
         masterId = '';
-      } else if (masterId) {
-        const master = clients[masterId];
-        client.ids.forEach((id) => {
-          if (master.ids.indexOf(id) > -1) {
-            sendMessage(master.connection, `${id}/0`, event.CONNECT);
-          }
-        });
+      } else {
+        toMaster(client.ids, 0, event.CONNECT);
       }
       client.connection = null;
-      delete clients[id];
+      delete clients[sessionId];
     });
   }
 
