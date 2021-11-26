@@ -81,7 +81,7 @@ module.exports = function (port = 80, timeout = 30) {
             if (client.role === 'master') {
               broadcast(0, event.CONNECT);
             } else {
-              toMaster(client.ids, 0, event.CONNECT);
+              toMaster(client.ids, `${client.ids.join(',')}/0`, event.CONNECT);
             }
             client.ids.length = 0;
             return;
@@ -169,7 +169,7 @@ module.exports = function (port = 80, timeout = 30) {
         broadcast(0, event.CONNECT);
         masterId = '';
       } else {
-        toMaster(client.ids, 0, event.CONNECT);
+        toMaster(client.ids, `${client.ids.join(',')}/0`, event.CONNECT);
       }
       client.connection = null;
       delete clients[sessionId];
