@@ -8,7 +8,8 @@ function Client() {
   Base.apply(this, [...arguments, connectedCallbacks]);
   const funcMap = {};
   let ids = [];
-  this.register = function(func, name) {
+  let context = null;
+  this.register = function(name, func) {
     if (typeof func !== 'function') return;
     funcMap[name] = func;
   };
@@ -25,6 +26,11 @@ function Client() {
   };
   this.getId = function() {
     return ids;
+  };
+  this.bind = function(self) {
+    if (typeof self === 'object') {
+      context = self;
+    }
   };
   this.socket.addEventListener('message', ({ data }) => {
     if (!data.indexOf(protocol.script)) {
@@ -80,7 +86,7 @@ function Client() {
               res.body[0].expression.arguments.forEach((item) => {
                 args.push(getValue(item));
               });
-              result = func(args);
+              result = func.apply(context, args);
               bCalled = true;
             }
           }

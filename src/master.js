@@ -7,6 +7,15 @@ function Master() {
   const connectedCallbacks = [];
   Base.apply(this, [...arguments, connectedCallbacks]);
   const callbackMap = {};
+  this.socket.addEventListener('open', () => {
+    this.socket.send(`${protocol.role}master`);
+  });
+  this.connect = function(id, opt = 1) {
+    if (this.socket.readyState === 1 && id) {
+      opt = opt === 1 ? 1 : 0;
+      this.socket.send(`${protocol.id}${id}/${opt}`);
+    }
+  };
   this.run = function(script, callback) {
     if (this.socket.readyState !== 1) return;
     if (typeof callback === 'function') {
@@ -15,7 +24,7 @@ function Master() {
       this.socket.send(`${protocol.script}${id}/${script}`);
       setTimeout(() => {
         delete callbackMap[id];
-      }, 300000); // 5min timeout
+      }, 180000); // 5min timeout
     } else {
       this.socket.send(`${protocol.script}${script}`);
     }
