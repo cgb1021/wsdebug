@@ -9,3 +9,5 @@ export const protocol = {
   role: 'role://',
   error: 'error://'
 };
+
+export const idReg = '(?:([\\w-]+)/)?(.+)$';

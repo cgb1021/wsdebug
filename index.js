@@ -73,8 +73,8 @@ module.exports = function (port = 80, timeout = 30) {
         const type = match[1];
         const data = match[2];
         switch (type) {
-        case 'id': {
-          const arr = data.split(':');
+        case event.ID: {
+          const arr = data.split('/');
           const id = arr[0];
           if (!id) {
             // clear

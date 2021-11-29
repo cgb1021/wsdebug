@@ -1,35 +1,28 @@
 /* 控制端（debug） */
-import { protocol } from './config';
-import prototype from './prototype';
+import { v4 as uuidv4 } from 'uuid';
+import { protocol, idReg } from './config';
+import Base from './base';
 
-function Master(host, port, ssl, onerror) {
-  if (arguments.length === 1 && typeof arguments[0] === 'object') {
-    const arg = arguments[0];
-    if (typeof arg.host !== 'undefined') host = arg.host;
-    if (typeof arg.port !== 'undefined') port = arg.port;
-    if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
-    if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
-  }
-  if (!port) {
-    port = ssl ? 443 : 80;
-  }
-  const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
-  const callbackMap = {};
+function Master() {
   const connectedCallbacks = [];
-  this.socket = new WebSocket(url);
-  this.socket.addEventListener('error', function (err) {
-    if (typeof onerror === 'function') {
-      onerror(err);
+  Base.apply(this, [...arguments, connectedCallbacks]);
+  const callbackMap = {};
+  this.run = function(script, callback) {
+    if (this.socket.readyState !== 1) return;
+    if (typeof callback === 'function') {
+      const id = uuidv4();
+      callbackMap[id] = callback;
+      this.socket.send(`${protocol.script}${id}/${script}`);
+      setTimeout(() => {
+        delete callbackMap[id];
+      }, 300000); // 5min timeout
     } else {
-      console.error(err.message ? err.message : 'websocket error');
+      this.socket.send(`${protocol.script}${script}`);
     }
-  });
-  this.socket.addEventListener('open', () => {
-    this.socket.send(`${protocol.role}master`);
-  });
+  };
   this.socket.addEventListener('message', ({ data }) => {
     if (!data.indexOf(protocol.result)) {
-      const reg = new RegExp(`^${protocol.result}(?:(\\w+)/)?(.+)$`);
+      const reg = new RegExp(`^${protocol.result}${idReg}`);
       const match = data.match(reg);
       if (match) {
         const id = match[1];
@@ -55,7 +48,7 @@ function Master(host, port, ssl, onerror) {
       });
     }
     if (!data.indexOf(protocol.error)) {
-      const reg = new RegExp(`^${protocol.error}(?:(\\w+)/)?(.+)$`);
+      const reg = new RegExp(`^${protocol.error}${idReg}`);
       const match = data.match(reg);
       if (match) {
         const id = match[1];
@@ -66,44 +59,7 @@ function Master(host, port, ssl, onerror) {
       console.error(data.substr(protocol.error.length));
     }
   });
-  this.run = function(script, callback) {
-    if (this.socket.readyState !== 1) return;
-    if (typeof callback === 'function') {
-      const id = Date.now() * 100 + Math.floor(Math.random() * 100);
-      callbackMap[id] = callback;
-      this.socket.send(`${protocol.script}${id}/${script}`);
-      setTimeout(() => {
-        delete callbackMap[id];
-      }, 300000); // 5min timeout
-    } else {
-      this.socket.send(`${protocol.script}${script}`);
-    }
-  };
-  this.connect = function(id, opt = 1) {
-    if (this.socket.readyState === 1 && id) {
-      opt = opt === 1 ? 1 : 0;
-      this.socket.send(`${protocol.id}${id}:${opt}`);
-    }
-  };
-  this.on = function(type, func, revmoe) {
-    switch (type) {
-    case 'connect': if (typeof func === 'function') {
-      const index = connectedCallbacks.indexOf(func);
-      if (!revmoe && index === -1) {
-        connectedCallbacks.push(func);
-      }
-      if (revmoe && index > -1) {
-        connectedCallbacks.splice(index, 1);
-      }
-    }
-      break;
-    default: !revmoe ? this.socket.addEventListener(type, func) : this.socket.removeEventListener(type, func);
-    }
-  };
 }
-Object.assign(Master.prototype, prototype);
-Master.prototype.receive = function(msg) {
-  console.log('receive', msg);
-};
+Master.prototype = Base.prototype;
 
 export default Master;

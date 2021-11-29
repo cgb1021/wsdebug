@@ -1,35 +1,34 @@
 /* 客户端 */
-import prototype from './prototype';
-import { protocol } from './config';
 import * as espree from 'espree';
+import { protocol, idReg } from './config';
+import Base from './base';
 
-function Client(host, port, ssl, onerror) {
-  if (arguments.length === 1 && typeof arguments[0] === 'object') {
-    const arg = arguments[0];
-    if (typeof arg.host !== 'undefined') host = arg.host;
-    if (typeof arg.port !== 'undefined') port = arg.port;
-    if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
-    if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
-  }
-  if (!port) {
-    port = ssl ? 443 : 8081;
-  }
-  const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
-  let context = null;
-  let ids = [];
-  const funcMap = {};
+function Client() {
   const connectedCallbacks = [];
-  this.socket = new WebSocket(url);
-  this.socket.addEventListener('error', function (err) {
-    if (typeof onerror === 'function') {
-      onerror(err);
-    } else {
-      console.error(err.message ? err.message : 'websocket error');
+  Base.apply(this, [...arguments, connectedCallbacks]);
+  const funcMap = {};
+  let ids = [];
+  this.register = function(func, name) {
+    if (typeof func !== 'function') return;
+    funcMap[name] = func;
+  };
+  this.remove = function(name, func) {
+    if (name) return delete funcMap[name];
+    if (typeof func === 'function') {
+      for (const key in funcMap) {
+        if (funcMap[key] === func) {
+          return delete funcMap[key];
+        }
+      }
     }
-  });
+    return false;
+  };
+  this.getId = function() {
+    return ids;
+  };
   this.socket.addEventListener('message', ({ data }) => {
     if (!data.indexOf(protocol.script)) {
-      const reg = new RegExp(`^${protocol.script}(?:(\\w+)/)?(.+)$`);
+      const reg = new RegExp(`^${protocol.script}${idReg}`);
       const match = data.match(reg);
       if (match) {
         const id = match[1];
@@ -81,7 +80,7 @@ function Client(host, port, ssl, onerror) {
               res.body[0].expression.arguments.forEach((item) => {
                 args.push(getValue(item));
               });
-              result = func.apply(context, args);
+              result = func(args);
               bCalled = true;
             }
           }
@@ -121,40 +120,7 @@ function Client(host, port, ssl, onerror) {
       console.error(data.substr(protocol.error.length));
     }
   });
-  this.bind = function(self) {
-    if (self && typeof self === 'object') {
-      context = self;
-    }
-  };
-  this.register = function(name, func) {
-    if (typeof func !== 'function') return;
-    funcMap[name] = func;
-  };
-  this.setId = function(any, opt = 1) {
-    if (this.socket.readyState === 1 && any && /^\w+$/.test(any)) {
-      opt = opt === 1 ? 1 : 0;
-      this.socket.send(`${protocol.id}${any}:${opt}`);
-    }
-  };
-  this.getId = function() {
-    return ids;
-  };
-  this.on = function(type, func, revmoe) {
-    switch (type) {
-    case 'connect': if (typeof func === 'function') {
-      const index = connectedCallbacks.indexOf(func);
-      if (!revmoe && index === -1) {
-        connectedCallbacks.push(func);
-      }
-      if (revmoe && index > -1) {
-        connectedCallbacks.splice(index, 1);
-      }
-    }
-      break;
-    default: !revmoe ? this.socket.addEventListener(type, func) : this.socket.removeEventListener(type, func);
-    }
-  };
 }
-Object.assign(Client.prototype, prototype);
+Client.prototype = Base.prototype;
 
 export default Client;
