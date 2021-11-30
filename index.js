@@ -109,8 +109,11 @@ module.exports = function (port = 80, timeout = 30) {
             });
             sendMessage(conn, `${id}/${counter}`, event.CONNECT);
           } else {
-            sendMessage(conn, client.ids.join(','), event.ID);
+            if (masterId && clients[masterId].ids.indexOf(id) > -1) {
+              sendMessage(conn, opt, event.CONNECT);
+            }
             toMaster(client.ids, `${id}/${opt}`, event.CONNECT);
+            sendMessage(conn, client.ids.join(','), event.ID);
           }
         }
           return;
