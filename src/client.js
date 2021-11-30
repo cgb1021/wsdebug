@@ -62,7 +62,7 @@ function Client() {
         try {
           const res = espree.parse(script);
           let bCalled = false;
-          if (res.body.length && res.body[0].expression.callee.name) {
+          if (res.body.length && res.body[0].expression.callee && res.body[0].expression.callee.name) {
             const fnName = res.body[0].expression.callee.name;
             const func = funcMap[fnName] ? funcMap[fnName] : (typeof window[fnName] === 'function' ? window[fnName] : null);
             if (func) {
