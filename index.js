@@ -78,7 +78,7 @@ module.exports = function (port = 80, timeout = 30) {
         case event.ID: {
           const arr = data.split('/');
           const id = arr[0];
-          if (!id) {
+          if (id === '*') {
             // clear
             if (client.role === 'master') {
               broadcast(0, event.CONNECT);

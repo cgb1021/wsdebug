@@ -39,8 +39,11 @@ function Base(host, port, ssl, onerror, connectedCallbacks) {
   };
 }
 Base.prototype.setId = function(str, opt = 1) {
-  if (this.socket && this.socket.readyState === 1 && /^[\w.-]+$/.test(str)) {
+  if (this.socket && this.socket.readyState === 1) {
     opt = opt === 1 ? 1 : 0;
+    if (!/^[\w.-]+$/.test(str)) {
+      str = '*';
+    }
     this.socket.send(`${protocol.id}${str}/${opt}`);
   }
 };
