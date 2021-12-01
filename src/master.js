@@ -7,9 +7,13 @@ function Master() {
   const connectedCallbacks = [];
   Base.apply(this, [...arguments, connectedCallbacks]);
   const callbackMap = {};
+  let password = '';
   this.socket.addEventListener('open', () => {
-    this.socket.send(`${protocol.role}master`);
+    this.socket.send(`${protocol.role}master${password ? '/' + password : ''}`);
   });
+  this.password = function (str) {
+    password = str;
+  };
   this.connect = function(id, opt = 1) {
     if (this.socket.readyState === 1 && id) {
       opt = opt === 1 ? 1 : 0;

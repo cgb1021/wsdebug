@@ -1,6 +1,8 @@
 module.exports = function (port = 80, timeout = 30) {
   const http = require('http');
   const sockjs = require('sockjs');
+  const fs = require('fs');
+  const md5 = require('md5');
   // const fs = require('fs');
   const event = {
     CONNECT: 'connect',
@@ -84,48 +86,60 @@ module.exports = function (port = 80, timeout = 30) {
               toMaster(client.ids, `${client.ids.join(',')}/0`, event.CONNECT);
             }
             client.ids.length = 0;
-            return;
-          }
-          // const oldIds = [...client.ids];
-          const opt = arr.length > 1 ? +arr[1] : 1;
-          const index = client.ids.indexOf(id);
-          if ((index > -1 && opt) || (index === -1 && !opt)) {
-            return;
-          }
-          if (opt) {
-            client.ids.push(id);
           } else {
-            client.ids.splice(index, 1);
-          }
-          if (client.role === 'master') {
-            let counter = 0;
-            Object.keys(clients).forEach((key) => {
-              if (key === masterId) return;
-              const client = clients[key];
-              if (client.ids.indexOf(id) > -1) {
-                counter++;
-                sendMessage(client.connection, opt, event.CONNECT);
-              }
-            });
-            sendMessage(conn, `${id}/${counter}`, event.CONNECT);
-          } else {
-            if (masterId && clients[masterId].ids.indexOf(id) > -1) {
-              sendMessage(conn, opt, event.CONNECT);
+            // const oldIds = [...client.ids];
+            const opt = arr.length > 1 ? +arr[1] : 1;
+            const index = client.ids.indexOf(id);
+            if ((index > -1 && opt) || (index === -1 && !opt)) {
+              return;
             }
-            toMaster(client.ids, `${id}/${opt}`, event.CONNECT);
-            sendMessage(conn, client.ids.join(','), event.ID);
+            if (opt) {
+              client.ids.push(id);
+            } else {
+              client.ids.splice(index, 1);
+            }
+            if (client.role === 'master') {
+              let counter = 0;
+              Object.keys(clients).forEach((key) => {
+                if (key === masterId) return;
+                const client = clients[key];
+                if (client.ids.indexOf(id) > -1) {
+                  counter++;
+                  sendMessage(client.connection, opt, event.CONNECT);
+                }
+              });
+              sendMessage(conn, `${id}/${counter}`, event.CONNECT);
+            } else if (masterId) {
+              toMaster(client.ids, `${id}/${opt}`, event.CONNECT);
+              if (clients[masterId].ids.indexOf(id) > -1) {
+                sendMessage(conn, opt, event.CONNECT);
+              }
+            }
           }
+          sendMessage(conn, client.ids.join(','), event.ID);
         }
           return;
         case 'role': {
-          const role = data !== 'master' ? 'client' : 'master';
+          const dataArr = data.split('/');
+          const role = dataArr[0] !== 'master' ? 'client' : 'master';
           if (client.role !== role) {
             // client -> master
-            if (role === 'master' && (!masterId || typeof clients[masterId] === 'undefined')) {
-              masterId = sessionId;
-            } else {
-              sendMessage(conn, 'Master exists', event.ERROR);
-              return;
+            if (role === 'master') {
+              try {
+                const auth = JSON.parse(fs.readFileSync('./store/auth.json'));
+                if (auth && auth.password && (dataArr.length < 2 || !dataArr[1] || auth.password !== md5(dataArr[1]))) {
+                  sendMessage(conn, 'Auth error', event.ERROR);
+                  return;
+                }
+              } catch (e) {
+                console.log(e && e.message);
+              }
+              if (!masterId || typeof clients[masterId] === 'undefined') {
+                masterId = sessionId;
+              } else {
+                sendMessage(conn, 'Master exists', event.ERROR);
+                return;
+              }
             }
             // master -> client
             if (role === 'client') {

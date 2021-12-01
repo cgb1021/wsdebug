@@ -1,6 +1,6 @@
 {
   "name": "wsdebug",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "使用websocket对远程页面进行debug调试",
   "main": "index.js",
   "scripts": {
@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "espree": "^8.0.0",
+    "md5": "^2.3.0",
     "sockjs": "^0.3.21",
     "uuid": "^8.3.2"
   }
