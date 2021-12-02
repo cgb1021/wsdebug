@@ -24,9 +24,9 @@ module.exports = function (port = 80, timeout = 30) {
     default: conn.write(data);
     }
   }
-  function broadcast (data, type = '') {
+  function broadcast (data, type = '', masterIds = null) {
     if (!masterId) return;
-    const masterIds = clients[masterId].ids;
+    masterIds = Array.isArray(masterIds) ? masterIds : clients[masterId].ids;
     if (!masterIds.length) return;
     Object.keys(clients).forEach((key) => {
       if (key === masterId) return;
@@ -41,17 +41,18 @@ module.exports = function (port = 80, timeout = 30) {
     });
   }
   function toMaster (ids, message, type = '') {
-    if (!masterId || !ids.length) return;
+    if (!masterId || !ids.length) return false;
     const master = clients[masterId];
     const masterIds = master.ids;
-    if (!masterIds.length) return;
+    if (!masterIds.length) return false;
     for (let len = ids.length - 1; len >= 0; len--) {
       const id = ids[len];
       if (masterIds.indexOf(id) > -1) {
         sendMessage(master.connection, message, type);
-        return;
+        return true;
       }
     }
+    return false;
   }
   function connection (conn) {
     const sessionId = conn.id;
@@ -71,14 +72,14 @@ module.exports = function (port = 80, timeout = 30) {
     conn.on('data', function(message) {
       const match = message.match(/^(\w+):\/\/(.+)$/);
       const client = clients[sessionId];
-      if (match && match.length > 2) {
+      if (match) {
         const type = match[1];
         const data = match[2];
         switch (type) {
         case event.ID: {
           const arr = data.split('/');
-          const id = arr[0];
-          if (id === '*') {
+          const ids = arr[0].split(',');
+          if (ids[0] === '*') {
             // clear
             if (client.role === 'master') {
               broadcast(0, event.CONNECT);
@@ -88,30 +89,63 @@ module.exports = function (port = 80, timeout = 30) {
             client.ids.length = 0;
           } else {
             // const oldIds = [...client.ids];
-            const opt = arr.length > 1 ? +arr[1] : 1;
-            const index = client.ids.indexOf(id);
-            if ((index > -1 && opt) || (index === -1 && !opt)) {
-              return;
-            }
+            const opt = arr.length > 1 && +arr[1] ? 1 : 0;
+            const oldIds = [...client.ids];
             if (opt) {
-              client.ids.push(id);
+              client.ids = [...new Set(client.ids.concat(ids))];
             } else {
-              client.ids.splice(index, 1);
-            }
-            if (client.role === 'master') {
-              let counter = 0;
-              Object.keys(clients).forEach((key) => {
-                if (key === masterId) return;
-                const client = clients[key];
-                if (client.ids.indexOf(id) > -1) {
-                  counter++;
-                  sendMessage(client.connection, opt, event.CONNECT);
+              ids.forEach((id) => {
+                const index = client.ids.indexOf(id);
+                if (index > -1) {
+                  client.ids.splice(index, 1);
                 }
               });
-              sendMessage(conn, `${id}/${counter}`, event.CONNECT);
+            }
+            const newIds = client.ids;
+            if (client.role === 'master') {
+              const oldMap = {};
+              const newMap = {};
+              const bcIds = [];
+              Object.keys(clients).forEach((key) => {
+                if (key === masterId) return;
+                const cids = clients[key].ids;
+                newIds.forEach((id) => {
+                  if (cids.indexOf(id) > -1) {
+                    if (opt) newMap[key] = 1;
+                    else oldMap[key] = 1;
+                  }
+                });
+                oldIds.forEach((id) => {
+                  if (cids.indexOf(id) > -1) {
+                    if (opt) oldMap[key] = 1;
+                    else newMap[key] = 1;
+                  }
+                });
+              });
+              Object.keys(newMap).forEach((key) => {
+                if (typeof oldMap[key] === 'undefined') {
+                  const cids = clients[key].ids;
+                  sendMessage(clients[key].connection, opt, event.CONNECT);
+                  ids.forEach((id) => {
+                    if (cids.indexOf(id) > -1) bcIds.push(id);
+                  });
+                }
+              });
+              sendMessage(conn, `${[...new Set(bcIds)].join(',')}/${opt}`, event.CONNECT);
             } else if (masterId) {
-              toMaster(client.ids, `${id}/${opt}`, event.CONNECT);
-              if (clients[masterId].ids.indexOf(id) > -1) {
+              const mids = clients[masterId].ids;
+              let bInOld = false;
+              let bInNew = false;
+              mids.forEach((id) => {
+                if (!bInOld && oldIds.indexOf(id) > -1) {
+                  bInOld = true;
+                }
+                if (!bInNew && newIds.indexOf(id) > -1) {
+                  bInNew = true;
+                }
+              });
+              if (bInNew !== bInOld) {
+                sendMessage(clients[masterId].connection, `${[...new Set(ids)].join(',')}/${opt}`, event.CONNECT);
                 sendMessage(conn, opt, event.CONNECT);
               }
             }
