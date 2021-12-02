@@ -3,13 +3,15 @@ module.exports = function (port = 80, timeout = 30) {
   const sockjs = require('sockjs');
   const fs = require('fs');
   const md5 = require('md5');
+  const { version } = require('./package.json');
   // const fs = require('fs');
   const event = {
     CONNECT: 'connect',
     ERROR: 'error',
     QUERY: 'query',
     LIVE: 'live',
-    ID: 'id'
+    ID: 'id',
+    VERSION: 'version'
   };
   const clients = {};
   let masterId = '';
@@ -19,6 +21,7 @@ module.exports = function (port = 80, timeout = 30) {
     case event.CONNECT:
     case event.QUERY:
     case event.ERROR:
+    case event.VERSION:
     case event.ID: conn.write(`${type}://${data}`);
       break;
     default: conn.write(data);
@@ -203,6 +206,9 @@ module.exports = function (port = 80, timeout = 30) {
             client.timeoutId = setTimeout(onTimeout, timeout * 1000);
           }
           return;
+        case event.VERSION:
+          sendMessage(conn, version, event.VERSION);
+          return;
         }
       }
       if (client.role === 'master') {
@@ -234,4 +240,5 @@ module.exports = function (port = 80, timeout = 30) {
     prefix:''
   });
   server.listen(port, '0.0.0.0');
+  console.log(version);
 };

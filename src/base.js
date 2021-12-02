@@ -1,5 +1,6 @@
 /* 客户端 */
 import { protocol } from './config';
+const { version } = require('../package.json');
 
 function Base(host, port, ssl, onerror, connectedCallbacks) {
   if (arguments.length === 2 && typeof arguments[0] === 'object') {
@@ -38,6 +39,12 @@ function Base(host, port, ssl, onerror, connectedCallbacks) {
     }
   };
 }
+Base.prototype.version = function (remote) {
+  if (remote) {
+    return this.socket && this.socket.readyState === 1 && this.socket.send(`${protocol.version}*`);
+  }
+  return version;
+};
 Base.prototype.setId = function(str, opt = 1) {
   if (this.socket && this.socket.readyState === 1) {
     opt = opt === 1 ? 1 : 0;

@@ -7,7 +7,8 @@ export const protocol = {
   close: 'close://',
   id: 'id://',
   role: 'role://',
-  error: 'error://'
+  error: 'error://',
+  version: 'version://'
 };
 
 export const idReg = '(?:([\\w-]+)/)?(.+)$';
