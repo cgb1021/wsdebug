@@ -59,9 +59,9 @@ function Client() {
             this.socket.send(`${protocol.result}${res}`);
           }
         };
+        let bCalled = false;
         try {
           const res = espree.parse(script);
-          let bCalled = false;
           if (res.body.length && res.body[0].expression.callee && res.body[0].expression.callee.name) {
             const fnName = res.body[0].expression.callee.name;
             const func = funcMap[fnName] ? funcMap[fnName] : (typeof window[fnName] === 'function' ? window[fnName] : null);
@@ -90,14 +90,19 @@ function Client() {
               bCalled = true;
             }
           }
-          if (!bCalled) {
-            result = eval(script);
-          }
         } catch (e) {
-          console.error(e);
-          send(e);
-          return;
+          console.log(e.message ? e.message : e);
         }
+        if (!bCalled) {
+          try {
+            result = eval(script);
+          } catch (e) {
+            console.error(e);
+            send(e);
+            return;
+          }
+        }
+        
         if (result instanceof Promise) {
           result.then((res) => send(null, res)).catch((e) => {
             console.error(e);
