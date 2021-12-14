@@ -16,7 +16,6 @@ module.exports = function (port = 80, timeout = 30) {
   };
   const clients = {};
   let masterMap = {};
-  const masterId = '';
   const idReg = '(?:([\\w-]+)/)?(.+)$';
 
   function sendMessage(conn, data, type = '') {
@@ -30,39 +29,10 @@ module.exports = function (port = 80, timeout = 30) {
     default: conn.write(data);
     }
   }
-  function broadcast (data, type = '', masterIds = null) {
-    if (!masterId) return;
-    masterIds = Array.isArray(masterIds) ? masterIds : clients[masterId].connectIds;
-    if (!masterIds.length) return;
-    Object.keys(clients).forEach((key) => {
-      if (key === masterId) return;
-      const client = clients[key];
-      for (let len = client.connectIds.length - 1; len >= 0; len--) {
-        const id = client.connectIds[len];
-        if (masterIds.indexOf(id) > -1) {
-          sendMessage(client.connection, data, type);
-          break;
-        }
-      }
-    });
-  }
-  function toMaster (ids, message, type = '') {
-    if (!masterId || !ids.length) return false;
-    const master = clients[masterId];
-    const masterIds = master.connectIds;
-    if (!masterIds.length) return false;
-    for (let len = ids.length - 1; len >= 0; len--) {
-      const id = ids[len];
-      if (masterIds.indexOf(id) > -1) {
-        sendMessage(master.connection, message, type);
-        return true;
-      }
-    }
-    return false;
-  }
   function onConnectIdsChange (client) {
     const sessionId = client.sid;
     const oldConnectedList = Object.keys(client.connectedMap);
+    const newConnectedList = [];
     const bMaster = client.role === 'master';
     const ids = client.connectIds;
     const map = {};
@@ -75,6 +45,7 @@ module.exports = function (port = 80, timeout = 30) {
         const id = client.connectIds[index];
         if (ids.indexOf(id) > -1) {
           map[key] = id;
+          newConnectedList.push(key);
           if (oldConnectedList.indexOf(key) === -1 && typeof client.connectedMap[sessionId] === 'undefined') {
             sendMessage(client.connection, `${id}/1`, event.CONNECT);
             addList.push(id);
@@ -85,7 +56,6 @@ module.exports = function (port = 80, timeout = 30) {
       }
     });
     client.connectedMap = map;
-    const newConnectedList = Object.keys(client.connectedMap);
     oldConnectedList.forEach((key) => {
       if (newConnectedList.indexOf(key) === -1 && typeof clients[key].connectedMap[sessionId] !== 'undefined') {
         const id = clients[key].connectedMap[sessionId];
@@ -171,6 +141,8 @@ module.exports = function (port = 80, timeout = 30) {
               const list = Object.values(masterMap);
               if (list.indexOf(auth[0]) == -1) {
                 client.name = auth[0];
+                client.connectIds.length = 0;
+                onConnectIdsChange(client);
                 masterMap[sessionId] = auth[0];
               } else {
                 sendMessage(conn, 'Master exists', event.ERROR);
@@ -179,11 +151,11 @@ module.exports = function (port = 80, timeout = 30) {
             }
             // master -> client
             if (role === 'client') {
-              broadcast(0, event.CONNECT);
+              client.connectIds.length = 0;
+              onConnectIdsChange(client);
               delete masterMap[sessionId];
               client.name = '';
             }
-            client.connectIds.length = 0;
           }
           client.role = role;
         }
@@ -192,12 +164,16 @@ module.exports = function (port = 80, timeout = 30) {
           if (client.role === 'master') {
             let ids = [];
             Object.keys(clients).forEach((key) => {
-              if (key === sessionId) return;
+              if (typeof masterMap[key] !== 'undefined') return;
               ids = ids.concat(clients[key].connectIds);
             });
             sendMessage(conn, ids.length ? [...new Set(ids)].join(',') : '', event.QUERY);
           } else {
-            sendMessage(conn, Object.keys(masterMap).join(','), event.QUERY);
+            const names = [];
+            Object.keys(masterMap).forEach((key) => {
+              names.push(clients[key].name);
+            });
+            sendMessage(conn, names.join(','), event.QUERY);
           }
           return;
         case event.LIVE:
@@ -211,11 +187,9 @@ module.exports = function (port = 80, timeout = 30) {
           return;
         }
       }
-      if (client.role === 'master') {
-        broadcast(message);
-      } else {
-        toMaster(client.connectIds, message);
-      }
+      Object.keys(client.connectedMap).forEach((key) => {
+        sendMessage(clients[key], message);
+      });
     });
     conn.on('close', function() {
       const client = clients[sessionId];
