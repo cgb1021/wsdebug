@@ -188,7 +188,7 @@ module.exports = function (port = 80, timeout = 30) {
         }
       }
       Object.keys(client.connectedMap).forEach((key) => {
-        sendMessage(clients[key], message);
+        sendMessage(clients[key].connection, message);
       });
     });
     conn.on('close', function() {
