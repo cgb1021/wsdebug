@@ -7,7 +7,6 @@ function Client() {
   const connectedCallbacks = [];
   Base.apply(this, [...arguments, connectedCallbacks]);
   const funcMap = {};
-  let ids = [];
   let context = null;
   this.register = function(name, func) {
     if (typeof func !== 'function') return;
@@ -24,15 +23,12 @@ function Client() {
     }
     return false;
   };
-  this.getId = function() {
-    return ids;
-  };
   this.bind = function(self) {
     if (typeof self === 'object') {
       context = self;
     }
   };
-  this.socket.addEventListener('message', ({ data }) => {
+  this.on('message', ({ data }) => {
     if (!data.indexOf(protocol.script)) {
       const reg = new RegExp(`^${protocol.script}${idReg}`);
       const match = data.match(reg);
@@ -44,9 +40,9 @@ function Client() {
           if (err) {
             const msg = err.message ? err.message : 'error';
             if (id) {
-              this.socket.send(`${protocol.error}${id}/${msg}`);
+              this.send(`${protocol.error}${id}/${msg}`);
             } else {
-              this.socket.send(`${protocol.error}${msg}`);
+              this.send(`${protocol.error}${msg}`);
             }
             return;
           }
@@ -54,9 +50,9 @@ function Client() {
             res = JSON.stringify(res);
           }
           if (id) {
-            this.socket.send(`${protocol.result}${id}/${res}`);
+            this.send(`${protocol.result}${id}/${res}`);
           } else {
-            this.socket.send(`${protocol.result}${res}`);
+            this.send(`${protocol.result}${res}`);
           }
         };
         let bCalled = false;
@@ -118,14 +114,6 @@ function Client() {
       connectedCallbacks.forEach((fn) => {
         fn(val);
       });
-    }
-    if (!data.indexOf(protocol.id)) {
-      const str = data.substr(protocol.id.length);
-      if (str) {
-        ids = str.split(',');
-      } else {
-        ids = [];
-      }
     }
     if (!data.indexOf(protocol.error)) {
       console.error(data.substr(protocol.error.length));

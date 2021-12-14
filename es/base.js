@@ -15,8 +15,9 @@ function Base(host, port, ssl, onerror, connectedCallbacks) {
     port = ssl ? 443 : 8081;
   }
   const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
-  this.socket = new WebSocket(url);
-  this.socket.addEventListener('error', function (err) {
+  let ids = [];
+  const socket = new WebSocket(url);
+  socket.addEventListener('error', function (err) {
     if (typeof onerror === 'function') {
       onerror(err);
     } else {
@@ -35,39 +36,51 @@ function Base(host, port, ssl, onerror, connectedCallbacks) {
       }
     }
       break;
-    default: !revmoe ? this.socket.addEventListener(type, func) : this.socket.removeEventListener(type, func);
+    default: !revmoe ? socket.addEventListener(type, func) : socket.removeEventListener(type, func);
     }
+  };
+  this.send = function(msg) {
+    if (socket && socket.readyState === 1) socket.send(msg);
+  };
+  this.close = function() {
+    socket && socket.close();
+  };
+  this.readyState = function() {
+    return socket.readyState;
+  };
+  this.setId = function(str, opt = 1) {
+    const arr = str.split(',');
+    if (arr.length && arr[0]) {
+      arr.forEach((id) => {
+        if (/^[\w,.-]+$/.test(id)) {
+          const index = ids.indexOf(id);
+          if (opt && index === -1) {
+            ids.push(id);
+          } else if (!opt && index > -1) {
+            ids.splice(index, 1);
+          }
+        }
+      });
+    } else {
+      ids.length = 0;
+    }
+    this.send(`${protocol.id}${ids.length ? ids.join(',') : '*'}`);
+  };
+  this.getId = function() {
+    return ids;
   };
 }
 Base.prototype.version = function (remote) {
   if (remote) {
-    return this.socket && this.socket.readyState === 1 && this.socket.send(`${protocol.version}*`);
+    return this.send(`${protocol.version}*`);
   }
   return version;
 };
-Base.prototype.setId = function(str, opt = 1) {
-  if (this.socket && this.socket.readyState === 1) {
-    opt = opt === 1 ? 1 : 0;
-    if (!/^[\w,.-]+$/.test(str)) {
-      str = '*';
-    }
-    this.socket.send(`${protocol.id}${str}/${opt}`);
-  }
-};
-Base.prototype.getId = function() {
-  return this.ids;
-};
-Base.prototype.close = function() {
-  this.socket && this.socket.close();
-};
-Base.prototype.send = function(msg) {
-  if (this.socket && this.socket.readyState === 1) this.socket.send(msg);
-};
 Base.prototype.query = function() {
-  if (this.socket && this.socket.readyState === 1) this.socket.send(`${protocol.query}1`);
+  this.send(`${protocol.query}1`);
 };
 Base.prototype.live = function() {
-  if (this.socket && this.socket.readyState === 1) this.socket.send(`${protocol.live}1`);
+  this.send(`${protocol.live}1`);
 };
 Base.prototype.receive = function(msg) {
   console.log(msg);

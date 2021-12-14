@@ -8,32 +8,31 @@ function Master() {
   Base.apply(this, [...arguments, connectedCallbacks]);
   const callbackMap = {};
   let password = '';
-  this.socket.addEventListener('open', () => {
-    this.socket.send(`${protocol.role}master${password ? '/' + password : ''}`);
+  let name = '';
+  this.on('open', () => {
+    this.send(`${protocol.role}master/${name}:${password}`);
   });
+  this.name = function (str) {
+    name = str;
+  };
   this.password = function (str) {
     password = str;
   };
-  this.connect = function(id, opt = 1) {
-    if (this.socket.readyState === 1 && id) {
-      opt = opt === 1 ? 1 : 0;
-      this.socket.send(`${protocol.id}${id}/${opt}`);
-    }
-  };
+  this.connect = this.setId;
   this.run = function(script, callback) {
-    if (this.socket.readyState !== 1) return;
+    if (this.readyState() !== 1) return;
     if (typeof callback === 'function') {
       const id = uuidv4();
       callbackMap[id] = callback;
-      this.socket.send(`${protocol.script}${id}/${script}`);
+      this.send(`${protocol.script}${id}/${script}`);
       setTimeout(() => {
         delete callbackMap[id];
       }, 180000); // 5min timeout
     } else {
-      this.socket.send(`${protocol.script}${script}`);
+      this.send(`${protocol.script}${script}`);
     }
   };
-  this.socket.addEventListener('message', ({ data }) => {
+  this.on('message', ({ data }) => {
     if (!data.indexOf(protocol.result)) {
       const reg = new RegExp(`^${protocol.result}${idReg}`);
       const match = data.match(reg);
@@ -55,8 +54,8 @@ function Master() {
       }
       connectedCallbacks.forEach((fn) => {
         fn({
-          id: arr[0],
-          value: arr[1]
+          increase: arr[0],
+          reduce: arr[1]
         });
       });
     }
