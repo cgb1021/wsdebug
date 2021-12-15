@@ -7,8 +7,8 @@
   "scripts": {
     "lint": "eslint --fix ./index.js ./src ./gulpfile.js",
     "build": "gulp build",
-    "dev": "node ./server.js",
-    "test": "npm run build && concurrently --kill-others \"node ./server.js\" \"karma start ./karma.conf.js\""
+    "dev": "node ./test/server.js",
+    "test": "npm run build && concurrently --kill-others \"node ./test/server.js\" \"karma start ./karma.conf.js\""
   },
   "keywords": [
     "websocket",
