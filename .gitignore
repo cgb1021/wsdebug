@@ -1,6 +1,6 @@
 .DS_Store
 node_modules
-npm-debug.log
+*.log
 package-lock.json
 .idea
 .zip
@@ -12,3 +12,4 @@ dev
 output
 log
 dev
+test/data/

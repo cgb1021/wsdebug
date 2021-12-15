@@ -6,6 +6,7 @@ import Base from './base';
 function Master() {
   const connectedCallbacks = [];
   Base.apply(this, [...arguments, connectedCallbacks]);
+  const onerror = arguments.length > 3 && typeof arguments[3] === 'function' ? arguments[3] : null;
   const callbackMap = {};
   let password = '';
   let name = '';
@@ -62,13 +63,19 @@ function Master() {
     if (!data.indexOf(protocol.error)) {
       const reg = new RegExp(`^${protocol.error}${idReg}`);
       const match = data.match(reg);
+      let error = null;
       if (match) {
         const id = match[1];
+        error = new Error(match[2]);
         if (id && callbackMap[id]) {
-          callbackMap[id](null, new Error(match[2]));
+          callbackMap[id](null, error);
         }
       }
-      console.error(data.substr(protocol.error.length));
+      if (onerror) {
+        onerror(error ? error : new Error('unknow error'));
+      } else {
+        console.error(error ? error.message : 'unknow error');
+      }
     }
   });
 }

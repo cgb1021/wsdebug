@@ -6,6 +6,7 @@ import Base from './base';
 function Client() {
   const connectedCallbacks = [];
   Base.apply(this, [...arguments, connectedCallbacks]);
+  const onerror = arguments.length > 3 && typeof arguments[3] === 'function' ? arguments[3] : null;
   const funcMap = {};
   let context = null;
   this.register = function(name, func) {
@@ -29,6 +30,10 @@ function Client() {
     }
   };
   this.on('message', ({ data }) => {
+    if (!data.indexOf(protocol.result)) {
+      const val = data.substr(protocol.result.length);
+      this.receive(val);
+    }
     if (!data.indexOf(protocol.script)) {
       const reg = new RegExp(`^${protocol.script}${idReg}`);
       const match = data.match(reg);
@@ -116,7 +121,12 @@ function Client() {
       });
     }
     if (!data.indexOf(protocol.error)) {
-      console.error(data.substr(protocol.error.length));
+      const msg = data.substr(protocol.error.length);
+      if (onerror) {
+        onerror(new Error(msg));
+      } else {
+        console.error(msg);
+      }
     }
   });
 }

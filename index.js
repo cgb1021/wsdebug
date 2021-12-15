@@ -9,6 +9,7 @@ module.exports = function (port = 80, timeout = 30) {
   const event = {
     CONNECT: 'connect',
     ERROR: 'error',
+    RESULT: 'result',
     QUERY: 'query',
     LIVE: 'live',
     ID: 'id',
@@ -24,6 +25,7 @@ module.exports = function (port = 80, timeout = 30) {
     case event.QUERY:
     case event.ERROR:
     case event.VERSION:
+    case event.RESULT:
     case event.ID: conn.write(`${type}://${data}`);
       break;
     default: conn.write(data);
@@ -115,6 +117,7 @@ module.exports = function (port = 80, timeout = 30) {
         case 'role': {
           const dataArr = data.split('/');
           const role = dataArr[0] !== 'master' ? 'client' : 'master';
+          let result = 0;
           if (client.role !== role) {
             // client -> master
             if (role === 'master') {
@@ -144,6 +147,7 @@ module.exports = function (port = 80, timeout = 30) {
                 client.connectIds.length = 0;
                 onConnectIdsChange(client);
                 masterMap[sessionId] = auth[0];
+                result = 1;
               } else {
                 sendMessage(conn, 'Master exists', event.ERROR);
                 return;
@@ -155,9 +159,11 @@ module.exports = function (port = 80, timeout = 30) {
               onConnectIdsChange(client);
               delete masterMap[sessionId];
               client.name = '';
+              result = 1;
             }
           }
           client.role = role;
+          sendMessage(conn, result, event.RESULT);
         }
           return;
         case event.QUERY:
@@ -187,9 +193,11 @@ module.exports = function (port = 80, timeout = 30) {
           return;
         }
       }
-      Object.keys(client.connectedMap).forEach((key) => {
-        sendMessage(clients[key].connection, message);
-      });
+      if (client.role === 'master') {
+        Object.keys(client.connectedMap).forEach((key) => {
+          sendMessage(clients[key].connection, message);
+        });
+      }
     });
     conn.on('close', function() {
       const client = clients[sessionId];
@@ -216,7 +224,7 @@ module.exports = function (port = 80, timeout = 30) {
       }
     },
     categories: { 
-      default: { appenders: ['access'], level: 'info' }
+      default: { appenders: ['access', 'stdout'], level: 'info' }
     }
   });
   const echo = sockjs.createServer();
