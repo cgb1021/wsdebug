@@ -2,15 +2,15 @@
 import { protocol } from './config';
 const { version } = require('../package.json');
 
-function Base(host, port, ssl, onerror, connectedCallbacks) {
+function Base(host, port, ssl, onerror) {
   if (arguments.length === 2 && typeof arguments[0] === 'object') {
     const arg = arguments[0];
     if (typeof arg.host !== 'undefined') host = arg.host;
     if (typeof arg.port !== 'undefined') port = arg.port;
     if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
     if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
-    connectedCallbacks = arguments[1];
   }
+  const connectedCallbacks = arguments[arguments.length - 1];
   if (!port) {
     port = ssl ? 443 : 8081;
   }
