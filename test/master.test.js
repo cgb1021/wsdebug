@@ -82,7 +82,7 @@ describe('#Master', function () {
       gClient.on('message', ({ data }) => {
         if (!data.indexOf(QUERY)) {
           const str = data.substr(QUERY.length);
-          assert.equal('uid_0,uid_1', str);
+          assert.equal('uid_0,uid_1,uid_101', str);
           done();
         }
       });
@@ -101,6 +101,7 @@ describe('#Master', function () {
   })
   describe('##Script', function () {
     this.timeout(4000);
+    let counter = 0;
     const master = new Master('127.0.0.1', 8081, false);
     master.name = 'admin3';
     master.password = 'yy123456';
@@ -112,7 +113,7 @@ describe('#Master', function () {
       assert.match(data, /^([\w_]+-)+[\w_]+$/, 'Receive');
     }
     it('run', function (done) {
-      master.connect('uid_1');
+      master.connect('uid_1,uid_101');
       gClient.run('getCounter()', (data) => {
         assert.equal(data, 2, 'getCounter');
         done();
@@ -122,6 +123,21 @@ describe('#Master', function () {
       gClient.run('location.href', (data) => {
         assert.equal(data, 'http://localhost:8082/context.html', 'location.href');
         done();
+      });
+    })
+    it('test', function (done) {
+      gClient.run('test()', (data) => {
+        assert.match(data, /^client_normal:\d+$/, 'test');
+        done();
+      });
+    })
+    it('mult', function (done) {
+      master.run('test()', (data) => {
+        counter++;
+        assert.match(data, /^client(_normal|\d):\d+$/, 'mult test');
+        if (counter === 3) {
+          done();
+        }
       });
     })
   })

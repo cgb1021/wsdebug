@@ -151,7 +151,6 @@ module.exports = function (port = 80, timeout = 30) {
                 client.connectIds.length = 0;
                 onConnectIdsChange(client);
                 masterMap[sessionId] = auth[0];
-                result = 1;
               } else {
                 sendMessage(conn, 'Master exists', event.ERROR);
                 return;
@@ -163,7 +162,6 @@ module.exports = function (port = 80, timeout = 30) {
               onConnectIdsChange(client);
               delete masterMap[sessionId];
               client.name = '';
-              result = 1;
             }
           }
           client.role = role;
