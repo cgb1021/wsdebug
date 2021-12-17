@@ -8,6 +8,7 @@ function Master() {
   Base.apply(this, [...arguments, connectedCallbacks]);
   const onerror = arguments.length > 3 && typeof arguments[3] === 'function' ? arguments[3] : null;
   const callbackMap = {};
+  let sessionId = '';
   this.password = '';
   this.name = '';
   this.on('open', () => {
@@ -19,12 +20,12 @@ function Master() {
     if (typeof callback === 'function') {
       const id = uuidv4();
       callbackMap[id] = callback;
-      this.send(`${protocol.script}${id}/${script}`);
+      this.send(`${protocol.script}${sessionId}/${id}/${script}`);
       setTimeout(() => {
         delete callbackMap[id];
       }, 180000); // 5min timeout
     } else {
-      this.send(`${protocol.script}${script}`);
+      this.send(`${protocol.script}${sessionId}/${script}`);
     }
   };
   this.on('message', ({ data }) => {
@@ -39,6 +40,10 @@ function Master() {
           this.receive(match[2]);
         }
       }
+    }
+    if (!data.indexOf(protocol.role)) {
+      sessionId = data.substr(protocol.role.length);
+      this.receive(sessionId);
     }
     if (!data.indexOf(protocol.connect)) {
       let arr = new Array(2);

@@ -43,4 +43,12 @@ describe('#Client', function () {
       assert.equal('uid_0,uid_1', gClient.getId());
     })
   })
+  describe('##Script', function () {
+    it('register', function () {
+      gClient.register('getCounter', () => {
+        assert.equal(counter, 2, 'Register');
+        return counter;
+      });
+    })
+  })
 });

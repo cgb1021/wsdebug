@@ -23,8 +23,9 @@ describe('#Master', function () {
         window.setInterval(() => master.live(), 2000);
       });
       master.receive = (val) => {
+        // console.log('normal sessionid', val);
         result = 1;
-        assert.equal(val, '1', 'Receive');
+        assert.match(val, /^[\w_-]+$/, 'Receive');
       }
       master.on('close', () => {
         result = 2
@@ -64,7 +65,7 @@ describe('#Master', function () {
       master.name = 'admin2';
       master.password = 'yy123456';
       master.receive = (val) => {
-        assert.equal(val, '1', 'Receive');
+        assert.match(val, /^[\w_-]+$/, 'Receive');
       }
       master.on('close', () => {
         assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'Close');
@@ -96,6 +97,32 @@ describe('#Master', function () {
       });
       gClient.connect('uid_0');
       assert.equal('uid_3,uid_4,uid_0', gClient.getId());
+    })
+  })
+  describe('##Script', function () {
+    this.timeout(4000);
+    const master = new Master('127.0.0.1', 8081, false);
+    master.name = 'admin3';
+    master.password = 'yy123456';
+    master.on('open', () => {
+      window.setInterval(() => master.live(), 2000);
+    });
+    master.receive = (data) => {
+      // console.log('gaclient sessionid', data);
+      assert.match(data, /^([\w_]+-)+[\w_]+$/, 'Receive');
+    }
+    it('run', function (done) {
+      master.connect('uid_1');
+      gClient.run('getCounter()', (data) => {
+        assert.equal(data, 2, 'getCounter');
+        done();
+      });
+    })
+    it('eval', function (done) {
+      gClient.run('location.href', (data) => {
+        assert.equal(data, 'http://localhost:8082/context.html', 'location.href');
+        done();
+      });
     })
   })
 });

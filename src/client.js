@@ -38,27 +38,32 @@ function Client() {
       const reg = new RegExp(`^${protocol.script}${idReg}`);
       const match = data.match(reg);
       if (match) {
-        const id = match[1];
-        const script = match[2];
+        const sid = match[1];
+        const reg2 = new RegExp(`^${idReg}`);
+        const match2 = match[2].match(reg2);
+        const id = match2 ? match2[1] : '';
+        const script = match2 ? match2[2] : match[2];
         let result = void 0;
         const send = (err, res) => {
+          let message = '';
           if (err) {
             const msg = err.message ? err.message : 'error';
             if (id) {
-              this.send(`${protocol.error}${id}/${msg}`);
+              message = `${protocol.error}${id}/${msg}`;
             } else {
-              this.send(`${protocol.error}${msg}`);
+              message = `${protocol.error}${msg}`;
             }
-            return;
-          }
-          if (typeof res === 'object') {
-            res = JSON.stringify(res);
-          }
-          if (id) {
-            this.send(`${protocol.result}${id}/${res}`);
           } else {
-            this.send(`${protocol.result}${res}`);
+            if (typeof res === 'object') {
+              res = JSON.stringify(res);
+            }
+            if (id) {
+              message = `${protocol.result}${id}/${res}`;
+            } else {
+              message = `${protocol.result}${res}`;
+            }
           }
+          this.send(`${protocol.route}${sid}/${message}`);
         };
         let bCalled = false;
         try {

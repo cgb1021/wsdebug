@@ -13,11 +13,12 @@ module.exports = function (port = 80, timeout = 30) {
     QUERY: 'query',
     LIVE: 'live',
     ID: 'id',
-    VERSION: 'version'
+    VERSION: 'version',
+    ROLE: 'role',
+    ROUTE: 'route'
   };
   const clients = {};
   let masterMap = {};
-  const idReg = '(?:([\\w-]+)/)?(.+)$';
 
   function sendMessage(conn, data, type = '') {
     switch (type) {
@@ -26,6 +27,8 @@ module.exports = function (port = 80, timeout = 30) {
     case event.ERROR:
     case event.VERSION:
     case event.RESULT:
+    case event.ROLE:
+    case event.ROUTE:
     case event.ID: conn.write(`${type}://${data}`);
       break;
     default: conn.write(data);
@@ -58,6 +61,7 @@ module.exports = function (port = 80, timeout = 30) {
       }
     });
     client.connectedMap = map;
+    // console.log(client.sid, client.connectIds, client.connectedMap);
     oldConnectedList.forEach((key) => {
       if (newConnectedList.indexOf(key) === -1 && typeof clients[key].connectedMap[sessionId] !== 'undefined') {
         const id = clients[key].connectedMap[sessionId];
@@ -92,17 +96,18 @@ module.exports = function (port = 80, timeout = 30) {
       const match = message.match(/^(\w+):\/\/(.+)$/);
       const client = clients[sessionId];
       const log = log4js.getLogger();
+      const idReg = '(?:([\\w-]+)/)?(.+)$';
+      const dataSplit = '/';
       if (match) {
         const type = match[1];
         const data = match[2];
         switch (type) {
         case event.ID: {
-          const arr = data.split('/');
+          const arr = data.split(dataSplit);
           const ids = arr[0].split(',');
           client.connectIds.length = 0;
           if (ids[0] !== '*') {
             // const oldIds = [...client.connectIds];
-            client.connectIds.length = 0;
             ids.forEach((id) => {
               const reg = new RegExp(idReg);
               if (reg.test(id)) {
@@ -114,10 +119,9 @@ module.exports = function (port = 80, timeout = 30) {
           onConnectIdsChange(client);
         }
           return;
-        case 'role': {
-          const dataArr = data.split('/');
+        case event.ROLE: {
+          const dataArr = data.split(dataSplit);
           const role = dataArr[0] !== 'master' ? 'client' : 'master';
-          let result = 0;
           if (client.role !== role) {
             // client -> master
             if (role === 'master') {
@@ -163,10 +167,10 @@ module.exports = function (port = 80, timeout = 30) {
             }
           }
           client.role = role;
-          sendMessage(conn, result, event.RESULT);
+          sendMessage(conn, sessionId, event.ROLE);
         }
           return;
-        case event.QUERY:
+        case event.QUERY: {
           if (client.role === 'master') {
             let ids = [];
             Object.keys(clients).forEach((key) => {
@@ -181,6 +185,18 @@ module.exports = function (port = 80, timeout = 30) {
             });
             sendMessage(conn, names.join(','), event.QUERY);
           }
+        }
+          return;
+        case event.ROUTE: {
+          const arr = data.split(dataSplit);
+          if (arr.length && arr[0] && typeof clients[arr[0]] !== 'undefined') {
+            const key = arr[0];
+            arr.shift();
+            sendMessage(clients[key].connection, arr.join(dataSplit));
+          } else {
+            sendMessage(conn, 'route error', event.ERROR);
+          }
+        }
           return;
         case event.LIVE:
           if (timeout > 0) {
@@ -193,11 +209,9 @@ module.exports = function (port = 80, timeout = 30) {
           return;
         }
       }
-      if (client.role === 'master') {
-        Object.keys(client.connectedMap).forEach((key) => {
-          sendMessage(clients[key].connection, message);
-        });
-      }
+      Object.keys(client.connectedMap).forEach((key) => {
+        sendMessage(clients[key].connection, message);
+      });
     });
     conn.on('close', function() {
       const client = clients[sessionId];
