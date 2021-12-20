@@ -24,6 +24,9 @@ function dosomething (arg) {
 }
 let intervalId = 0
 const client = new Client();
+client.receive = function(msg) {
+  console.log(msg);
+};
 client.on('open', () => {
   client.setId(`uid_123456`);
   intervalId = setInterval(() => client.live(), 5000)
@@ -53,6 +56,9 @@ let intervalId = 0;
 const master = new Master();
 master.name = 'admin';
 master.password = '123456';
+master.receive = function(msg) {
+  console.log(msg);
+};
 master.on('open', () => {
   master.connect('uid_123456');
   intervalId = setInterval(() => master.live(), 5000)
@@ -89,25 +95,56 @@ server()
 @param {Function} onerror
 Client()
 
+@description: addEventListener
+@param {String} type
+@param {Function} func
+on()
+
+@description: get session id
+@return {String}
+sessionId()
+
+@description: send data
+@param {String} msg
+send()
+
+@description: close websocket
+close()
+
+@description: get websocket readyState
+@return {Number}
+readyState()
+
+@description: client id
+@param {String} id
+@param {Number} opt 1: add 0: remove
+setId()
+
+@return {Array}
+getId()
+
+@description: query master
+query()
+
+@description: send live heart
+live()
+
+@description: receive data
+receive()
+
 @description: register function
 @param {String} name
 @param {Function} func
 register()
 
-@description: client id
-@param {String} id
-setId()
+@description: remove function
+@param {String} name
+@param {Function} func
+remove()
 
-@return {String}
-getId()
-
-close()
-
-@param {String} msg
-send()
-
-@description: query master
-query()
+@description: bind register function context
+@param {Object} self
+bind()
 ```
 
 ### master
@@ -120,21 +157,49 @@ query()
 @param {Function} onerror
 Master()
 
+@description: addEventListener
+@param {String} type
+@param {Function} func
+on()
+
+@description: get session id
+@return {String}
+sessionId()
+
+@description: send data
+@param {String} msg
+send()
+
+@description: close websocket
+close()
+
+@description: get websocket readyState
+@return {Number}
+readyState()
+
+@description: client id
+@param {String} id
+@param {Number} opt 1: add 0: remove
+setId()
+
+@return {Array}
+getId()
+
+@description: query master
+query()
+
+@description: send live heart
+live()
+
+@description: receive data
+receive()
+
 @description: eval client scripts
 @param {String} script
 @param {Function} callback
 run()
 
-@description: connect client
+@description: setId
 @param {String} id
 connect()
-
-close()
-
-@description: send message to connected clients
-@param {String} msg
-send()
-
-@description: query clients
-query()
 ```
