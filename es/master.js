@@ -36,13 +36,9 @@ function Master() {
         const id = match[1];
         if (id && callbackMap[id]) {
           callbackMap[id](match[2]);
-        } else {
-          this.receive(match[2]);
+          return;
         }
       }
-    }
-    if (!data.indexOf(protocol.role)) {
-      this.receive(data.substr(protocol.role.length));
     }
     if (!data.indexOf(protocol.connect)) {
       let arr = new Array(2);
@@ -57,6 +53,7 @@ function Master() {
           reduce: arr[1]
         });
       });
+      return;
     }
     if (!data.indexOf(protocol.error)) {
       const reg = new RegExp(`^${protocol.error}${idReg}`);
@@ -71,10 +68,12 @@ function Master() {
       }
       if (onerror) {
         onerror(error ? error : new Error('unknow error'));
+        return;
       } else {
         console.error(error ? error.message : 'unknow error');
       }
     }
+    this.receive(data);
   });
 }
 Master.prototype = Base.prototype;

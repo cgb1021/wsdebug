@@ -30,10 +30,6 @@ function Client() {
     }
   };
   this.on('message', ({ data }) => {
-    if (!data.indexOf(protocol.result)) {
-      const val = data.substr(protocol.result.length);
-      this.receive(val);
-    }
     if (!data.indexOf(protocol.script)) {
       const reg = new RegExp(`^${protocol.script}${idReg}`);
       const match = data.match(reg);
@@ -118,21 +114,25 @@ function Client() {
           send(null, result);
         }
       }
+      return;
     }
     if (!data.indexOf(protocol.connect)) {
       const val = data.substr(protocol.connect.length);
       connectedCallbacks.forEach((fn) => {
         fn(val);
       });
+      return;
     }
     if (!data.indexOf(protocol.error)) {
       const msg = data.substr(protocol.error.length);
       if (onerror) {
         onerror(new Error(msg));
+        return;
       } else {
         console.error(msg);
       }
     }
+    this.receive(data);
   });
 }
 Client.prototype = Base.prototype;

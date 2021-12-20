@@ -24,8 +24,11 @@ describe('#Master', function () {
       });
       master.receive = (val) => {
         // console.log('normal sessionid', val);
-        result = 1;
-        assert.equal(val, 'master', 'Receive');
+        const protocol = 'role://';
+        if (!val.indexOf(protocol)) {
+          result = 1;
+          assert.equal(val.substr(protocol.length), 'master', 'Receive');
+        }
       }
       master.on('close', () => {
         result = 2
@@ -65,7 +68,10 @@ describe('#Master', function () {
       master.name = 'admin2';
       master.password = 'yy123456';
       master.receive = (val) => {
-        assert.equal(val, 'master', 'Receive');
+        const protocol = 'role://';
+        if (!val.indexOf(protocol)) {
+          assert.equal(val.substr(protocol.length), 'master', 'Receive');
+        }
       }
       master.on('close', () => {
         assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'Close');
@@ -110,7 +116,10 @@ describe('#Master', function () {
     });
     master.receive = (data) => {
       // console.log('gaclient sessionid', data);
-      assert.equal(data, 'master', 'Receive');
+      const protocol = 'role://';
+      if (!data.indexOf(protocol)) {
+        assert.equal(data.substr(protocol.length), 'master', 'Receive');
+      }
     }
     it('run', function (done) {
       master.connect('uid_1,uid_101');
