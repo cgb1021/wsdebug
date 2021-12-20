@@ -15,7 +15,8 @@ module.exports = function (port = 80, timeout = 30) {
     ID: 'id',
     VERSION: 'version',
     ROLE: 'role',
-    ROUTE: 'route'
+    ROUTE: 'route',
+    SID: 'sid'
   };
   const clients = {};
   let masterMap = {};
@@ -29,6 +30,7 @@ module.exports = function (port = 80, timeout = 30) {
     case event.RESULT:
     case event.ROLE:
     case event.ROUTE:
+    case event.SID:
     case event.ID: conn.write(`${type}://${data}`);
       break;
     default: conn.write(data);
@@ -92,6 +94,7 @@ module.exports = function (port = 80, timeout = 30) {
     if (timeout > 0) {
       clients[sessionId].timeoutId = setTimeout(onTimeout, timeout * 1000);
     }
+    sendMessage(conn, sessionId, event.SID);
     conn.on('data', function(message) {
       const match = message.match(/^(\w+):\/\/(.+)$/);
       const client = clients[sessionId];
@@ -165,7 +168,7 @@ module.exports = function (port = 80, timeout = 30) {
             }
           }
           client.role = role;
-          sendMessage(conn, sessionId, event.ROLE);
+          sendMessage(conn, client.role, event.ROLE);
         }
           return;
         case event.QUERY: {

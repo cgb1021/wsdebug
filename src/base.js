@@ -16,12 +16,18 @@ function Base(host, port, ssl, onerror) {
   }
   const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   let ids = [];
+  let sessionId = '';
   const socket = new WebSocket(url);
   socket.addEventListener('error', function (err) {
     if (typeof onerror === 'function') {
       onerror(err);
     } else {
       console.error(err.message ? err.message : 'websocket error');
+    }
+  });
+  socket.addEventListener('message', ({ data }) => {
+    if (!data.indexOf(protocol.sid)) {
+      sessionId = data.substr(protocol.sid.length);
     }
   });
   this.on = function(type, func, revmoe) {
@@ -38,6 +44,9 @@ function Base(host, port, ssl, onerror) {
       break;
     default: !revmoe ? socket.addEventListener(type, func) : socket.removeEventListener(type, func);
     }
+  };
+  this.sessionId = function() {
+    return sessionId;
   };
   this.send = function(msg) {
     if (socket && socket.readyState === 1) socket.send(msg);

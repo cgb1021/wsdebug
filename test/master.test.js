@@ -25,7 +25,7 @@ describe('#Master', function () {
       master.receive = (val) => {
         // console.log('normal sessionid', val);
         result = 1;
-        assert.match(val, /^[\w_-]+$/, 'Receive');
+        assert.equal(val, 'master', 'Receive');
       }
       master.on('close', () => {
         result = 2
@@ -65,7 +65,7 @@ describe('#Master', function () {
       master.name = 'admin2';
       master.password = 'yy123456';
       master.receive = (val) => {
-        assert.match(val, /^[\w_-]+$/, 'Receive');
+        assert.equal(val, 'master', 'Receive');
       }
       master.on('close', () => {
         assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'Close');
@@ -110,7 +110,7 @@ describe('#Master', function () {
     });
     master.receive = (data) => {
       // console.log('gaclient sessionid', data);
-      assert.match(data, /^([\w_]+-)+[\w_]+$/, 'Receive');
+      assert.equal(data, 'master', 'Receive');
     }
     it('run', function (done) {
       master.connect('uid_1,uid_101');

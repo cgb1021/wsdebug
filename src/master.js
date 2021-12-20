@@ -8,7 +8,6 @@ function Master() {
   Base.apply(this, [...arguments, connectedCallbacks]);
   const onerror = arguments.length > 3 && typeof arguments[3] === 'function' ? arguments[3] : null;
   const callbackMap = {};
-  let sessionId = '';
   this.password = '';
   this.name = '';
   this.on('open', () => {
@@ -17,6 +16,7 @@ function Master() {
   this.connect = this.setId;
   this.run = function(script, callback) {
     if (this.readyState() !== 1) return;
+    const sessionId = this.sessionId();
     if (typeof callback === 'function') {
       const id = uuidv4();
       callbackMap[id] = callback;
@@ -42,8 +42,7 @@ function Master() {
       }
     }
     if (!data.indexOf(protocol.role)) {
-      sessionId = data.substr(protocol.role.length);
-      this.receive(sessionId);
+      this.receive(data.substr(protocol.role.length));
     }
     if (!data.indexOf(protocol.connect)) {
       let arr = new Array(2);

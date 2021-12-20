@@ -4,6 +4,10 @@
 
 ## step1. server
 ```
+// mkdir ./logs
+// mkdir ./store
+// vim ./store/auth.json
+
 const server = require('wsdebug');
 server(8081);
 ```
@@ -47,6 +51,8 @@ import { Master } from 'wsdebug/es';
 
 let intervalId = 0;
 const master = new Master();
+master.name = 'admin';
+master.password = '123456';
 master.on('open', () => {
   master.connect('uid_123456');
   intervalId = setInterval(() => master.live(), 5000)
@@ -82,10 +88,6 @@ server()
 @param {Boolean} ssl
 @param {Function} onerror
 Client()
-
-@description: bind function context
-@param {Object} self
-bind()
 
 @description: register function
 @param {String} name
