@@ -54,7 +54,7 @@ module.exports = function (port = 80, timeout = 30) {
           map[key] = id;
           newConnectedList.push(key);
           if (oldConnectedList.indexOf(key) === -1 && typeof client.connectedMap[sessionId] === 'undefined') {
-            sendMessage(client.connection, `${id}/0`, event.CONNECT);
+            sendMessage(client.connection, `${id}/`, event.CONNECT);
             addList.push(id);
           }
           client.connectedMap[sessionId] = id;
@@ -68,7 +68,7 @@ module.exports = function (port = 80, timeout = 30) {
       if (newConnectedList.indexOf(key) === -1 && typeof clients[key].connectedMap[sessionId] !== 'undefined') {
         const id = clients[key].connectedMap[sessionId];
         delete clients[key].connectedMap[sessionId];
-        sendMessage(clients[key].connection, `0/${id}`, event.CONNECT);
+        sendMessage(clients[key].connection, `/${id}`, event.CONNECT);
         reduceList.push(id);
       }
     });

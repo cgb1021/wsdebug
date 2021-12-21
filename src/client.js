@@ -116,13 +116,6 @@ function Client() {
       }
       return;
     }
-    if (!data.indexOf(protocol.connect)) {
-      const val = data.substr(protocol.connect.length);
-      connectedCallbacks.forEach((fn) => {
-        fn(val);
-      });
-      return;
-    }
     if (!data.indexOf(protocol.error)) {
       const msg = data.substr(protocol.error.length);
       if (onerror) {

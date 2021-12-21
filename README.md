@@ -67,7 +67,7 @@ client.on('close', () => {
   clearInterval(intervalId)
 })
 master.on('connect', (data) => {
-  console.log(`[${data.id}]`, data.value);
+  console.log(data.increase, data.decrease);
   master.run('dosomething("test")', (msg) => {
     console.log('result', msg);
   })

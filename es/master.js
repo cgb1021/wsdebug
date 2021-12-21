@@ -40,21 +40,6 @@ function Master() {
         }
       }
     }
-    if (!data.indexOf(protocol.connect)) {
-      let arr = new Array(2);
-      try {
-        arr = data.substr(protocol.connect.length).split('/');
-      } catch (e) {
-        console.error(e);
-      }
-      connectedCallbacks.forEach((fn) => {
-        fn({
-          increase: arr[0],
-          reduce: arr[1]
-        });
-      });
-      return;
-    }
     if (!data.indexOf(protocol.error)) {
       const reg = new RegExp(`^${protocol.error}${idReg}`);
       const match = data.match(reg);

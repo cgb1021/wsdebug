@@ -28,6 +28,22 @@ function Base(host, port, ssl, onerror) {
   socket.addEventListener('message', ({ data }) => {
     if (!data.indexOf(protocol.sid)) {
       sessionId = data.substr(protocol.sid.length);
+      return;
+    }
+    if (!data.indexOf(protocol.connect)) {
+      let arr = new Array(2);
+      try {
+        arr = data.substr(protocol.connect.length).split('/');
+      } catch (e) {
+        console.error(e);
+      }
+      connectedCallbacks.forEach((fn) => {
+        fn({
+          increase: arr[0] ? arr[0].split(',') : [],
+          decrease: arr[1] ? arr[1].split(',') : []
+        });
+      });
+      return;
     }
   });
   this.on = function(type, func, revmoe) {
@@ -40,6 +56,8 @@ function Base(host, port, ssl, onerror) {
       if (revmoe && index > -1) {
         connectedCallbacks.splice(index, 1);
       }
+    } else {
+      connectedCallbacks.length = 0;
     }
       break;
     default: !revmoe ? socket.addEventListener(type, func) : socket.removeEventListener(type, func);

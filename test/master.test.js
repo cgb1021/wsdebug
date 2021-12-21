@@ -94,15 +94,40 @@ describe('#Master', function () {
       });
       gClient.query();
     })
-    it('connect', function (done) {
+  })
+  describe('##Connect', function () {
+    it('increase', function (done) {
       gClient.on('connect', (data) => {
-        const increase = data.increase.split(',');
+        const increase = data.increase;
         assert.equal(increase[0], 'uid_0', 'Increase');
-        assert.isEmpty(data.reduce, 'Reduce');
+        assert.isEmpty(data.decrease, 'Decrease');
         done();
       });
       gClient.connect('uid_0');
       assert.equal('uid_3,uid_4,uid_0', gClient.getId());
+    })
+    it('decrease', function (done) {
+      const master = new Master('127.0.0.1', 8081, false);
+      master.name = 'admin4';
+      master.password = 'yy123456';
+      master.on('open', () => {
+        window.setInterval(() => master.live(), 2000);
+        master.connect('uid_0');
+        assert.equal('uid_0', master.getId());
+      });
+      master.on('connect', (data) => {
+        const increase = data.increase;
+        const decrease = data.decrease;
+        if (increase[0]) {
+          assert.equal(increase[0], 'uid_0', 'Increase');
+          assert.isEmpty(data.decrease, 'Decrease');
+          master.connect('uid_0', 0);
+        } else {
+          assert.equal(decrease[0], 'uid_0', 'Decrease');
+          assert.isEmpty(increase, 'Increase');
+          done();
+        }
+      });
     })
   })
   describe('##Script', function () {
