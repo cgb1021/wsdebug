@@ -10,7 +10,9 @@ function Base(host, port, ssl, onerror) {
     if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
     if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
   }
-  const connectedCallbacks = arguments[arguments.length - 1];
+  const {
+    connectedCallbacks
+  } = arguments[arguments.length - 1];
   if (!port) {
     port = ssl ? 443 : 8081;
   }

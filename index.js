@@ -43,37 +43,37 @@ module.exports = function (port = 80, timeout = 30) {
     const bMaster = client.role === 'master';
     const ids = client.connectIds;
     const map = {};
-    const addList = [];
-    const reduceList = [];
+    const increaseList = [];
+    const decreaseList = [];
     Object.keys(clients).forEach((key) => {
       if (key === sessionId || (bMaster && typeof masterMap[key] !== 'undefined') || (!bMaster && typeof masterMap[key] === 'undefined')) return;
       const client = clients[key];
+      const oldIndex = oldConnectedList.indexOf(key);
+      let bConnect = false;
       for (let index = 0; index < client.connectIds.length; index++) {
         const id = client.connectIds[index];
         if (ids.indexOf(id) > -1) {
+          bConnect = true;
           map[key] = id;
           newConnectedList.push(key);
-          if (oldConnectedList.indexOf(key) === -1 && typeof client.connectedMap[sessionId] === 'undefined') {
+          if (oldIndex === -1 && typeof client.connectedMap[sessionId] === 'undefined') {
             sendMessage(client.connection, `${id}/`, event.CONNECT);
-            addList.push(id);
+            increaseList.push(id);
           }
           client.connectedMap[sessionId] = id;
           break;
         }
       }
-    });
-    client.connectedMap = map;
-    // console.log(client.sid, client.connectIds, client.connectedMap);
-    oldConnectedList.forEach((key) => {
-      if (newConnectedList.indexOf(key) === -1 && typeof clients[key].connectedMap[sessionId] !== 'undefined') {
+      if (!bConnect && oldIndex > -1 && typeof clients[key].connectedMap[sessionId] !== 'undefined') {
         const id = clients[key].connectedMap[sessionId];
         delete clients[key].connectedMap[sessionId];
         sendMessage(clients[key].connection, `/${id}`, event.CONNECT);
-        reduceList.push(id);
+        decreaseList.push(id);
       }
     });
-    if (addList.length + reduceList.length) {
-      sendMessage(client.connection, `${addList.join(',')}/${reduceList.join(',')}`, event.CONNECT);
+    client.connectedMap = map;
+    if (increaseList.length + decreaseList.length) {
+      sendMessage(client.connection, `${increaseList.join(',')}/${decreaseList.join(',')}`, event.CONNECT);
     }
   }
   function connection (conn) {
