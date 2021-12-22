@@ -43,11 +43,11 @@ module.exports = function (port = 80, timeout = 30) {
     const oldConnectedList = Object.keys(client.connectedMap);
     const map = {};
     const ids = [];
+    const clientName = client.name;
     Object.keys(clients).forEach((key) => {
       if (key === sessionId || (bMaster && typeof masterMap[key] !== 'undefined') || (!bMaster && typeof masterMap[key] === 'undefined')) return;
       const client = clients[key];
       const oldIndex = oldConnectedList.indexOf(key);
-      const name = client.name;
       let bConnect = false;
       for (let index = 0; index < client.connectIds.length; index++) {
         const id = client.connectIds[index];
@@ -55,17 +55,17 @@ module.exports = function (port = 80, timeout = 30) {
           bConnect = true;
           map[key] = id;
           if (oldIndex === -1 && typeof client.connectedMap[sessionId] === 'undefined') {
-            sendMessage(client.connection, `${bMaster ? id : name}/1`, event.CONNECT);
+            sendMessage(client.connection, `${clientName ? clientName : id}/1`, event.CONNECT);
           }
-          ids.push(bMaster ? id : name);
-          client.connectedMap[sessionId] = id;
+          ids.push(client.name ? client.name : id);
+          client.connectedMap[sessionId] = clientName ? clientName : id;
           break;
         }
       }
       if (!bConnect && oldIndex > -1 && typeof clients[key].connectedMap[sessionId] !== 'undefined') {
         const id = clients[key].connectedMap[sessionId];
         delete clients[key].connectedMap[sessionId];
-        sendMessage(clients[key].connection, `${bMaster ? id : clients[key].name}/0`, event.CONNECT);
+        sendMessage(clients[key].connection, `${clientName ? clientName : id}/0`, event.CONNECT);
       }
     });
     client.connectedMap = map;
@@ -120,10 +120,10 @@ module.exports = function (port = 80, timeout = 30) {
         case event.ROLE: {
           const dataArr = data.split(dataSplit);
           const role = dataArr[0] !== 'master' ? 'client' : 'master';
+          const auth = dataArr.length > 1 ? dataArr[1].split(':') : [];
           if (client.role !== role) {
             // client -> master
             if (role === 'master') {
-              const auth = dataArr.length > 1 ? dataArr[1].split(':') : [];
               try {
                 const json = JSON.parse(fs.readFileSync('./store/auth.json'));
                 if (
@@ -162,8 +162,8 @@ module.exports = function (port = 80, timeout = 30) {
             }
           }
           client.role = role;
-          if (client.role === 'role') {
-            client.name = dataArr.length > 1 ? dataArr[1] : '';
+          if (client.role === 'client') {
+            client.name = auth[0];
           }
           sendMessage(conn, client.role, event.ROLE);
         }

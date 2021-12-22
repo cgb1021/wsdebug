@@ -4,15 +4,10 @@ import { protocol, idReg } from './config';
 import Base from './base';
 
 function Master() {
-  const data = { connectedCallbacks: [] };
+  const data = { connectedCallbacks: [], type: 'master' };
   Base.apply(this, [...arguments, data]);
-  const onerror = arguments.length > 3 && typeof arguments[3] === 'function' ? arguments[3] : null;
+  const onerror = arguments.length > 4 && typeof arguments[4] === 'function' ? arguments[4] : null;
   const callbackMap = {};
-  this.password = '';
-  this.name = '';
-  this.on('open', () => {
-    this.send(`${protocol.role}master/${this.name}:${this.password}`);
-  });
   this.connect = this.setId;
   this.run = function(script, callback) {
     if (this.readyState() !== 1) return;

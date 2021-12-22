@@ -9,8 +9,7 @@ describe('#Client', function () {
   describe('##Create', function () {
     it('normal', function (done) {
       this.timeout(5000);
-      const client = new Client('127.0.0.1', 8081, false);
-      client.name = 'client_normal'
+      const client = new Client('127.0.0.1', 8081, false, 2);
       gClient = client;
       let result = 0;
       setTimeout(() => {
@@ -20,7 +19,6 @@ describe('#Client', function () {
       client.on('open', () => {
         assert.equal(result, 0, 'Open');
         result = 1;
-        window.setInterval(() => client.live(), 2000);
       });
       client.on('close', () => {
         result = 2
@@ -29,7 +27,7 @@ describe('#Client', function () {
     it('timeout', function (done) {
       this.timeout(4000);
       const now = Date.now();
-      const client = new Client('127.0.0.1', 8081, false);
+      const client = new Client('127.0.0.1', 8081, false, 0);
       client.on('close', () => {
         assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'Close');
         done();
@@ -46,30 +44,26 @@ describe('#Client', function () {
   })
   describe('##Script', function () {
     it('register', function () {
-      const client = new Client('127.0.0.1', 8081, false);
-      client.name = 'client1';
+      const client = new Client('127.0.0.1', 8081, false, 2);
       client.on('open', () => {
-        window.setInterval(() => client.live(), 2000);
         client.setId('uid_101');
       });
       client.register('test', () => {
-        return `${client.name}:${Date.now()}`;
+        return `client1:${Date.now()}`;
       });
-      const client2 = new Client('127.0.0.1', 8081, false);
-      client2.name = 'client2';
+      const client2 = new Client('127.0.0.1', 8081, false, 2);
       client2.on('open', () => {
-        window.setInterval(() => client2.live(), 2000);
         client2.setId('uid_101');
       });
       client2.register('test', () => {
-        return `${client2.name}:${Date.now()}`;
+        return `client2:${Date.now()}`;
       });
       gClient.register('getCounter', () => {
         assert.equal(counter, 2, 'Register');
         return counter;
       });
       gClient.register('test', () => {
-        return `${gClient.name}:${Date.now()}`;
+        return `client_normal:${Date.now()}`;
       });
     })
   })

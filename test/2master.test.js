@@ -9,7 +9,7 @@ describe('#Master', function () {
   describe('##Create', function () {
     it('normal', function (done) {
       this.timeout(5000);
-      const master = new Master('127.0.0.1', 8081, false);
+      const master = new Master('127.0.0.1', 8081, false, 2);
       gClient = master;
       let result = 0;
       setTimeout(() => {
@@ -20,7 +20,6 @@ describe('#Master', function () {
       master.password = 'yy123456';
       master.on('open', () => {
         assert.equal(result, 0, 'Open');
-        window.setInterval(() => master.live(), 2000);
       });
       master.receive = (val) => {
         // console.log('normal sessionid', val);
@@ -36,7 +35,7 @@ describe('#Master', function () {
     });
     it('exists', function (done) {
       // this.timeout(5000);
-      const master = new Master('127.0.0.1', 8081, false, (err) => {
+      const master = new Master('127.0.0.1', 8081, false, 0, (err) => {
         assert.equal(err.message, 'Master exists', 'Master exists');
         done();
       });
@@ -45,7 +44,7 @@ describe('#Master', function () {
     });
     it('password', function (done) {
       // this.timeout(5000);
-      const master = new Master('127.0.0.1', 8081, false, (err) => {
+      const master = new Master('127.0.0.1', 8081, false, 0, (err) => {
         assert.equal(err.message, 'Auth error', 'Auth error');
         done();
       });
@@ -54,7 +53,7 @@ describe('#Master', function () {
     });
     it('noadmin', function (done) {
       // this.timeout(5000);
-      const master = new Master('127.0.0.1', 8081, false, (err) => {
+      const master = new Master('127.0.0.1', 8081, false, 0, (err) => {
         assert.equal(err.message, 'Auth error', 'Auth error');
         done();
       });
@@ -64,7 +63,7 @@ describe('#Master', function () {
     it('another', function (done) {
       this.timeout(4000);
       const now = Date.now();
-      const master = new Master('127.0.0.1', 8081, false);
+      const master = new Master('127.0.0.1', 8081, false, 0);
       master.name = 'admin2';
       master.password = 'yy123456';
       master.receive = (val) => {
@@ -105,11 +104,10 @@ describe('#Master', function () {
       assert.equal('uid_3,uid_4,uid_0', gClient.getId());
     })
     it('decrease', function (done) {
-      const master = new Master('127.0.0.1', 8081, false);
+      const master = new Master('127.0.0.1', 8081, false, 2);
       master.name = 'admin4';
       master.password = 'yy123456';
       master.on('open', () => {
-        window.setInterval(() => master.live(), 2000);
         master.connect('uid_0');
         assert.equal('uid_0', master.getId());
       });
@@ -127,12 +125,9 @@ describe('#Master', function () {
   describe('##Script', function () {
     this.timeout(4000);
     let counter = 0;
-    const master = new Master('127.0.0.1', 8081, false);
+    const master = new Master('127.0.0.1', 8081, false, 2);
     master.name = 'admin3';
     master.password = 'yy123456';
-    master.on('open', () => {
-      window.setInterval(() => master.live(), 2000);
-    });
     master.receive = (data) => {
       // console.log('gaclient sessionid', data);
       const protocol = 'role://';

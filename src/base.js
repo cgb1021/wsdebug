@@ -2,16 +2,18 @@
 import { protocol } from './config';
 const { version } = require('../package.json');
 
-function Base(host, port, ssl, onerror) {
+function Base(host, port, ssl, timeout, onerror) {
   if (arguments.length === 2 && typeof arguments[0] === 'object') {
     const arg = arguments[0];
     if (typeof arg.host !== 'undefined') host = arg.host;
     if (typeof arg.port !== 'undefined') port = arg.port;
     if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
     if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
+    if (typeof arg.timeout !== 'undefined') timeout = arg.timeout;
   }
   const {
-    connectedCallbacks
+    connectedCallbacks,
+    type
   } = arguments[arguments.length - 1];
   if (!port) {
     port = ssl ? 443 : 8081;
@@ -19,12 +21,20 @@ function Base(host, port, ssl, onerror) {
   const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   let ids = [];
   let sessionId = '';
+  this.name = '';
+  this.password = '';
   const socket = new WebSocket(url);
   socket.addEventListener('error', function (err) {
     if (typeof onerror === 'function') {
       onerror(err);
     } else {
       console.error(err.message ? err.message : 'websocket error');
+    }
+  });
+  socket.addEventListener('open', () => {
+    this.send(`${protocol.role}${type}/${this.name}:${this.password}`);
+    if (timeout && timeout > 0) {
+      window.setInterval(() => this.send(`${protocol.live}1`), timeout * 1000);
     }
   });
   socket.addEventListener('message', ({ data }) => {
@@ -102,9 +112,6 @@ Base.prototype.version = function (remote) {
 };
 Base.prototype.query = function() {
   this.send(`${protocol.query}1`);
-};
-Base.prototype.live = function() {
-  this.send(`${protocol.live}1`);
 };
 Base.prototype.receive = function(msg) {
   console.log(msg);

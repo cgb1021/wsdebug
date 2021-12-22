@@ -23,13 +23,12 @@ function dosomething (arg) {
   return Date.now();
 }
 let intervalId = 0
-const client = new Client();
+const client = new Client('127.0.0.1', 8081, false, 3);
 client.receive = function(msg) {
   console.log(msg);
 };
 client.on('open', () => {
   client.setId(`uid_123456`);
-  intervalId = setInterval(() => client.live(), 5000)
 })
 client.on('close', () => {
   clearInterval(intervalId)
@@ -53,7 +52,7 @@ import { Master } from 'wsdebug/es';
 // import { Master } from 'wsdebug/lib';
 
 let intervalId = 0;
-const master = new Master();
+const master = new Master('127.0.0.1', 8081, false, 3);
 master.name = 'admin';
 master.password = '123456';
 master.receive = function(msg) {
@@ -61,7 +60,6 @@ master.receive = function(msg) {
 };
 master.on('open', () => {
   master.connect('uid_123456');
-  intervalId = setInterval(() => master.live(), 5000)
 })
 client.on('close', () => {
   clearInterval(intervalId)
@@ -93,6 +91,7 @@ server()
 @param {String} host
 @param {Number} port
 @param {Boolean} ssl
+@param {Number} timeout
 @param {Function} onerror
 Client()
 
@@ -127,9 +126,6 @@ getId()
 @description: query master
 query()
 
-@description: send live heart
-live()
-
 @description: receive data
 receive()
 
@@ -155,6 +151,7 @@ bind()
 @param {String} host
 @param {Number} port
 @param {Boolean} ssl
+@param {Number} timeout
 @param {Function} onerror
 Master()
 
@@ -188,9 +185,6 @@ getId()
 
 @description: query master
 query()
-
-@description: send live heart
-live()
 
 @description: receive data
 receive()

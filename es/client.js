@@ -4,9 +4,9 @@ import { protocol, idReg } from './config';
 import Base from './base';
 
 function Client() {
-  const data = { connectedCallbacks: [] };
+  const data = { connectedCallbacks: [], type: 'client' };
   Base.apply(this, [...arguments, data]);
-  const onerror = arguments.length > 3 && typeof arguments[3] === 'function' ? arguments[3] : null;
+  const onerror = arguments.length > 4 && typeof arguments[4] === 'function' ? arguments[4] : null;
   const funcMap = {};
   let context = null;
   this.register = function(name, func) {
