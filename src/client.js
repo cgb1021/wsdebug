@@ -125,7 +125,6 @@ function Client() {
         console.error(msg);
       }
     }
-    this.receive(data);
   });
 }
 Client.prototype = Base.prototype;

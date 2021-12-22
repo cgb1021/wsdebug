@@ -53,7 +53,6 @@ function Master() {
         console.error(error ? error.message : 'unknow error');
       }
     }
-    this.receive(data);
   });
 }
 Master.prototype = Base.prototype;

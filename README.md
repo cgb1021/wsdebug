@@ -126,9 +126,6 @@ getId()
 @description: query master
 query()
 
-@description: receive data
-receive()
-
 @description: register function
 @param {String} name
 @param {Function} func
@@ -185,9 +182,6 @@ getId()
 
 @description: query master
 query()
-
-@description: receive data
-receive()
 
 @description: eval client scripts
 @param {String} script
