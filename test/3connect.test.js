@@ -71,11 +71,29 @@ describe('#Master', function () {
           if (opt === 1) {
             client.setId('uid_303', 0);
           } else if (opt === 0) {
+            master.close();
             done();
           }
         } else {
           assert.equal(opt, undefined, 'connect undefined');
           assert.isEmpty(arr[0], 'connect empty');
+        }
+      })
+    })
+    it('query', function (done) {
+      const master = new Master('127.0.0.1', 8081, false, 2);
+      master.name = 'admin7';
+      master.password = 'yy123456';
+      client.setId(`uid_303`);
+      master.on('open', () => {
+        master.query();
+      })
+      master.on('message', ({ data }) => {
+        const protocol = 'query://'
+        if (!data.indexOf(protocol)) {
+          const val = data.substr(protocol.length);
+          assert.match(val, /^client888:uid_303,(?:0:[\w,]+)+$/, 'test');
+          done();
         }
       })
     })

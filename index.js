@@ -172,8 +172,9 @@ module.exports = function (port = 80, timeout = 30) {
           if (client.role === 'master') {
             let ids = [];
             Object.keys(clients).forEach((key) => {
-              if (typeof masterMap[key] !== 'undefined') return;
-              ids = ids.concat(clients[key].connectIds);
+              const client = clients[key];
+              if (typeof masterMap[key] !== 'undefined' || !client.connectIds.length) return;
+              ids = ids.concat(`${client.name ? client.name : '0'}:${client.connectIds.join(',')}`);
             });
             sendMessage(conn, ids.length ? [...new Set(ids)].join(',') : '', event.QUERY);
           } else {
