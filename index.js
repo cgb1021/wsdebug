@@ -36,7 +36,7 @@ module.exports = function (port = 80, timeout = 30) {
     default: conn.write(data);
     }
   }
-  function onConnectIdsChange (client) {
+  function onConnectIdsChange (client, oldConnectIds) {
     const sessionId = client.sid;
     const bMaster = client.role === 'master';
     const connectIds = client.connectIds;
@@ -55,17 +55,16 @@ module.exports = function (port = 80, timeout = 30) {
           bConnect = true;
           map[key] = id;
           if (oldIndex === -1 && typeof client.connectedMap[sessionId] === 'undefined') {
-            sendMessage(client.connection, `${clientName ? clientName : id}/1`, event.CONNECT);
+            sendMessage(client.connection, `${clientName ? clientName : '0'}${!bMaster ? ':' + connectIds.join(',') : ''}/1`, event.CONNECT);
           }
-          ids.push(client.name ? client.name : id);
-          client.connectedMap[sessionId] = clientName ? clientName : id;
+          ids.push(bMaster? `${client.name ? client.name : '0'}:${client.connectIds.join(',')}` : client.name);
+          client.connectedMap[sessionId] = id;
           break;
         }
       }
       if (!bConnect && oldIndex > -1 && typeof clients[key].connectedMap[sessionId] !== 'undefined') {
-        const id = clients[key].connectedMap[sessionId];
         delete clients[key].connectedMap[sessionId];
-        sendMessage(clients[key].connection, `${clientName ? clientName : id}/0`, event.CONNECT);
+        sendMessage(clients[key].connection, `${clientName ? clientName : '0'}${!bMaster ? ':' + oldConnectIds.join(',') : ''}/0`, event.CONNECT);
       }
     });
     client.connectedMap = map;
@@ -103,6 +102,7 @@ module.exports = function (port = 80, timeout = 30) {
         case event.ID: {
           const arr = data.split(dataSplit);
           const ids = arr[0].split(',');
+          const oldConnectIds = [...client.connectIds];
           client.connectIds.length = 0;
           if (ids[0] !== '*') {
             // const oldIds = [...client.connectIds];
@@ -114,7 +114,7 @@ module.exports = function (port = 80, timeout = 30) {
             });
           }
           sendMessage(conn, client.connectIds.join(','), event.ID);
-          onConnectIdsChange(client);
+          onConnectIdsChange(client, oldConnectIds);
         }
           return;
         case event.ROLE: {
@@ -123,6 +123,7 @@ module.exports = function (port = 80, timeout = 30) {
           const auth = dataArr.length > 1 ? dataArr[1].split(':') : [];
           if (client.role !== role) {
             // client -> master
+            const oldConnectIds = [...client.connectIds];
             if (role === 'master') {
               try {
                 const json = JSON.parse(fs.readFileSync('./store/auth.json'));
@@ -146,8 +147,9 @@ module.exports = function (port = 80, timeout = 30) {
               const list = Object.values(masterMap);
               if (list.indexOf(auth[0]) == -1) {
                 client.name = auth[0];
+                
                 client.connectIds.length = 0;
-                onConnectIdsChange(client);
+                onConnectIdsChange(client, oldConnectIds);
                 masterMap[sessionId] = auth[0];
               } else {
                 sendMessage(conn, 'Master exists', event.ERROR);
@@ -157,7 +159,7 @@ module.exports = function (port = 80, timeout = 30) {
             // master -> client
             if (role === 'client') {
               client.connectIds.length = 0;
-              onConnectIdsChange(client);
+              onConnectIdsChange(client, oldConnectIds);
               delete masterMap[sessionId];
             }
           }
@@ -215,8 +217,9 @@ module.exports = function (port = 80, timeout = 30) {
     conn.on('close', function() {
       const client = clients[sessionId];
       if (client.timeoutId) clearTimeout(client.timeoutId);
+      const oldConnectIds = [...client.connectIds];
       client.connectIds.length = 0;
-      onConnectIdsChange(client);
+      onConnectIdsChange(client, oldConnectIds);
       if (client.role === 'master') {
         delete masterMap[sessionId];
       }
