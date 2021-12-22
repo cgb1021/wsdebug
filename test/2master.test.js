@@ -98,9 +98,7 @@ describe('#Master', function () {
   describe('##Connect', function () {
     it('increase', function (done) {
       gClient.on('connect', (data) => {
-        const increase = data.increase;
-        assert.equal(increase[0], 'uid_0', 'Increase');
-        assert.isEmpty(data.decrease, 'Decrease');
+        assert.equal(data[0], 'uid_0', 'Increase');
         done();
       });
       gClient.connect('uid_0');
@@ -116,15 +114,11 @@ describe('#Master', function () {
         assert.equal('uid_0', master.getId());
       });
       master.on('connect', (data) => {
-        const increase = data.increase;
-        const decrease = data.decrease;
-        if (increase[0]) {
-          assert.equal(increase[0], 'uid_0', 'Increase');
-          assert.isEmpty(data.decrease, 'Decrease');
+        if (data[0]) {
+          assert.equal(data[0], 'uid_0', 'Increase');
           master.connect('uid_0', 0);
         } else {
-          assert.equal(decrease[0], 'uid_0', 'Decrease');
-          assert.isEmpty(increase, 'Increase');
+          assert.isEmpty(data[0], 'Decrease');
           done();
         }
       });

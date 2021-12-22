@@ -66,8 +66,9 @@ master.on('open', () => {
 client.on('close', () => {
   clearInterval(intervalId)
 })
-master.on('connect', (data) => {
-  console.log(data.increase, data.decrease);
+// arr: ['id1', ...], opt: undefined|0|1, 0: decrease, 1: increase
+master.on('connect', (arr, opt) => {
+  console.log(arr, opt);
   master.run('dosomething("test")', (msg) => {
     console.log('result', msg);
   })

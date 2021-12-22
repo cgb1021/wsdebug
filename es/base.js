@@ -33,18 +33,13 @@ function Base(host, port, ssl, onerror) {
       return;
     }
     if (!data.indexOf(protocol.connect)) {
-      let arr = new Array(2);
+      let arr = [''];
       try {
         arr = data.substr(protocol.connect.length).split('/');
       } catch (e) {
         console.error(e);
       }
-      connectedCallbacks.forEach((fn) => {
-        fn({
-          increase: arr[0] ? arr[0].split(',') : [],
-          decrease: arr[1] ? arr[1].split(',') : []
-        });
-      });
+      connectedCallbacks.forEach((fn) => fn(arr[0].split(','), arr.length > 1 ? +arr[1] : undefined));
       return;
     }
   });
