@@ -21,6 +21,7 @@ function Base(host, port, ssl, timeout, onerror) {
   const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   let ids = [];
   let sessionId = '';
+  let intervalId = 0;
   this.name = '';
   this.password = '';
   const socket = new WebSocket(url);
@@ -34,7 +35,13 @@ function Base(host, port, ssl, timeout, onerror) {
   socket.addEventListener('open', () => {
     this.send(`${protocol.role}${type}/${this.name}:${this.password}`);
     if (timeout && timeout > 0) {
-      window.setInterval(() => this.send(`${protocol.live}1`), timeout * 1000);
+      intervalId = window.setInterval(() => this.send(`${protocol.live}1`), timeout * 1000);
+    }
+  });
+  socket.addEventListener('close', () => {
+    if (intervalId) {
+      intervalId = window.clearInterval(intervalId);
+      intervalId = 0;
     }
   });
   socket.addEventListener('message', ({ data }) => {
