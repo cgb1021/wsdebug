@@ -99,7 +99,9 @@ function Base(host, port, ssl, timeout, onerror) {
     return sessionId;
   };
   this.send = function(msg) {
-    if (socket && socket.readyState === 1) socket.send(msg);
+    if (socket && socket.readyState === 1) {
+      socket.send(msg);
+    }
   };
   this.close = function() {
     socket && socket.close();

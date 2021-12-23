@@ -94,7 +94,7 @@ describe('#Master', function () {
         const protocol = 'query://'
         if (!data.indexOf(protocol)) {
           const val = data.substr(protocol.length);
-          assert.match(val, /^client888:uid_303,(?:0:[\w,]+)+$/, 'test');
+          assert.match(val, /^client888:uid_303,(?:0:[\w,|]+)+$/, 'test');
           done();
         }
       })

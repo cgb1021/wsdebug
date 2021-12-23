@@ -87,7 +87,7 @@ describe('#Master', function () {
       gClient.on('message', ({ data }) => {
         if (!data.indexOf(QUERY)) {
           const str = data.substr(QUERY.length);
-          assert.equal('uid_0,uid_1,uid_101', str.replace(/0:/g, ''));
+          assert.equal('0:uid_0|uid_1,0:uid_101,0:uid_101', str);
           done();
         }
       });
