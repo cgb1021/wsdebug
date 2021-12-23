@@ -69,7 +69,7 @@ function Base(host, port, ssl, timeout, onerror) {
               const arr = str.split(':');
               return {
                 name: arr[0],
-                list: arr[1].split('|')
+                list: arr[1] ? arr[1].split('|') : []
               };
             } else {
               return {
