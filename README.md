@@ -64,7 +64,7 @@ master.on('open', () => {
 client.on('close', () => {
   clearInterval(intervalId)
 })
-// arr: ['id1', ...], opt: undefined|0|1, 0: decrease, 1: increase
+// arr: [{ name: 'string', list: ['string', ...]}, ...], opt: undefined|0|1, 0: decrease, 1: increase
 master.on('connect', (arr, opt) => {
   console.log(arr, opt);
   master.run('dosomething("test")', (msg) => {

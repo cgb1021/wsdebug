@@ -56,7 +56,25 @@ function Base(host, port, ssl, timeout, onerror) {
       } catch (e) {
         console.error(e);
       }
-      connectedCallbacks.forEach((fn) => fn(arr[0].split(','), arr.length > 1 ? +arr[1] : undefined));
+      connectedCallbacks.forEach((fn) => fn(
+        arr[0] ?
+          arr[0].split(',').map((str) => {
+            if (type === 'master') {
+              const arr = str.split(':');
+              return {
+                name: arr[0],
+                list: arr[1].split('|')
+              };
+            } else {
+              return {
+                name: str,
+                list: []
+              };
+            }
+          })
+          :
+          [],
+        arr.length > 1 ? +arr[1] : undefined));
       return;
     }
   });
@@ -119,9 +137,6 @@ Base.prototype.version = function (remote) {
 };
 Base.prototype.query = function() {
   this.send(`${protocol.query}1`);
-};
-Base.prototype.receive = function(msg) {
-  console.log(msg);
 };
 
 export default Base;

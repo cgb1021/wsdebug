@@ -97,7 +97,7 @@ describe('#Master', function () {
   describe('##Connect', function () {
     it('increase', function (done) {
       gClient.on('connect', (data) => {
-        assert.equal(data[0], 'uid_0', 'Increase');
+        assert.equal(data[0].list[0], 'uid_0', 'Increase');
         done();
       });
       gClient.connect('uid_0');
@@ -112,11 +112,11 @@ describe('#Master', function () {
         assert.equal('uid_0', master.getId());
       });
       master.on('connect', (data) => {
-        if (data[0]) {
-          assert.equal(data[0], 'uid_0', 'Increase');
+        if (data.length) {
+          assert.equal(data[0].list[0], 'uid_0', 'Increase');
           master.connect('uid_0', 0);
         } else {
-          assert.isEmpty(data[0], 'Decrease');
+          assert.equal(data.length, 0, 'Decrease');
           done();
         }
       });

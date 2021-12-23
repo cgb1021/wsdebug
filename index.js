@@ -57,7 +57,7 @@ module.exports = function (port = 80, timeout = 30) {
           if (oldIndex === -1 && typeof client.connectedMap[sessionId] === 'undefined') {
             sendMessage(client.connection, `${clientName ? clientName : '0'}${!bMaster ? ':' + connectIds.join(',') : ''}/1`, event.CONNECT);
           }
-          ids.push(bMaster? `${client.name ? client.name : '0'}:${client.connectIds.join(',')}` : client.name);
+          ids.push(bMaster? `${client.name ? client.name : '0'}:${client.connectIds.join('|')}` : client.name);
           client.connectedMap[sessionId] = id;
           break;
         }

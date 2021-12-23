@@ -15,7 +15,7 @@ describe('#Client', function () {
     });
     client.on('connect', (arr, opt) => {
       if (typeof opt === 'number') {
-        assert.equal(arr[0], 'admin5', 'connect opt');
+        assert.equal(arr[0].name, 'admin5', 'connect opt');
         if (opt === 1) {
           master.connect('uid_301', 0);
         } else if (opt === 0) {
@@ -23,7 +23,7 @@ describe('#Client', function () {
         }
       } else {
         assert.equal(opt, undefined, 'connect undefined');
-        assert.isEmpty(arr[0], 'connect empty');
+        assert.equal(arr.length, 0, 'connect empty');
       }
     })
   })
@@ -41,7 +41,7 @@ describe('#Master', function () {
       });
       master.on('connect', (arr, opt) => {
         if (typeof opt === 'number') {
-          assert.equal(arr[0], 'uid_302', 'connect opt');
+          assert.equal(arr[0].list[0], 'uid_302', 'connect opt');
           if (opt === 1) {
             client.setId('uid_302', 0);
           } else if (opt === 0) {
@@ -49,7 +49,7 @@ describe('#Master', function () {
           }
         } else {
           assert.equal(opt, undefined, 'connect undefined');
-          assert.isEmpty(arr[0], 'connect empty');
+          assert.equal(arr.length, 0, 'connect empty');
         }
       })
     })
@@ -67,7 +67,7 @@ describe('#Master', function () {
       });
       master.on('connect', (arr, opt) => {
         if (typeof opt === 'number') {
-          assert.equal(arr[0], 'client888', 'connect opt');
+          assert.equal(arr[0].name, 'client888', 'connect opt');
           if (opt === 1) {
             client.setId('uid_303', 0);
           } else if (opt === 0) {
@@ -76,7 +76,7 @@ describe('#Master', function () {
           }
         } else {
           assert.equal(opt, undefined, 'connect undefined');
-          assert.isEmpty(arr[0], 'connect empty');
+          assert.equal(arr.length, 0, 'connect empty');
         }
       })
     })
