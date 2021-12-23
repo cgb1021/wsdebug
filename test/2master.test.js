@@ -3,7 +3,6 @@ import { assert } from 'chai';
 import Master from '../es/master';
 
 let gClient
-const QUERY = 'query://'
 
 describe('#Master', function () {
   describe('##Create', function () {
@@ -85,11 +84,8 @@ describe('#Master', function () {
     })
     it('qeury', function (done) {
       gClient.query().then((data) => {
-        if (!data.indexOf(QUERY)) {
-          const str = data.substr(QUERY.length);
-          assert.equal('0:uid_0|uid_1,0:uid_101,0:uid_101', str);
-          done();
-        }
+        assert.equal('0:uid_0|uid_1,0:uid_101,0:uid_101', data);
+        done();
       });
     })
   })

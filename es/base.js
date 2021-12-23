@@ -171,7 +171,9 @@ Base.prototype.version = function (remote) {
   return version;
 };
 Base.prototype.query = function () {
-  return this.send2(`${protocol.query}1`);
+  return this.send2(`${protocol.query}1`).then((data) => {
+    return data.substr(protocol.query.length);
+  });
 };
 
 export default Base;

@@ -89,12 +89,8 @@ describe('#Master', function () {
       client.setId(`uid_303`);
       master.on('open', () => {
         master.query().then((data) => {
-          const protocol = 'query://'
-          if (!data.indexOf(protocol)) {
-            const val = data.substr(protocol.length);
-            assert.match(val, /^client888:uid_303,(?:0:[\w,|]+)+$/, 'test');
-            done();
-          }
+          assert.match(data, /^client888:uid_303,(?:0:[\w,|]+)+$/, 'test');
+          done();
         });
       })
     })
