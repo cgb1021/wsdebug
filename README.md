@@ -124,6 +124,7 @@ setId()
 getId()
 
 @description: query master
+@return {Promise<String>}
 query()
 
 @description: register function
@@ -181,6 +182,7 @@ setId()
 getId()
 
 @description: query master
+@return {Promise<String>}
 query()
 
 @description: eval client scripts
