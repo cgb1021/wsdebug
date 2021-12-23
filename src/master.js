@@ -1,42 +1,32 @@
 /* 控制端（debug） */
-import { v4 as uuidv4 } from 'uuid';
 import { protocol, idReg } from './config';
 import Base from './base';
 
 function Master() {
-  const onerror = arguments.length > 4 && typeof arguments[4] === 'function' ? arguments[4] : null;
+  const onerror = arguments.length > 4 && typeof arguments[4] === 'function' ?
+    arguments[4] :
+    (typeof arguments[0] === 'object' && typeof arguments[0].onerror === 'function' ? arguments[0].onerror : null);
   const callbackMap = {};
   const data = {
     connectedCallbacks: [],
     type: 'master',
-    onmessage: ({ data }) => {
+    onmessage: ({ data, id }) => {
       if (!data.indexOf(protocol.result)) {
-        const reg = new RegExp(`^${protocol.result}${idReg}`);
-        const match = data.match(reg);
-        if (match) {
-          const id = match[1];
-          if (id && callbackMap[id]) {
-            callbackMap[id](match[2]);
-            return;
-          }
+        if (typeof callbackMap[id] !== 'undefined') {
+          callbackMap[id](data.substr(protocol.result.length));
         }
       }
       if (!data.indexOf(protocol.error)) {
-        const reg = new RegExp(`^${protocol.error}${idReg}`);
-        const match = data.match(reg);
-        let error = null;
-        if (match) {
-          const id = match[1];
-          error = new Error(match[2]);
-          if (id && callbackMap[id]) {
-            callbackMap[id](null, error);
-          }
+        const result = data.substr(protocol.error.length);
+        const error = new Error(result ? result : 'unknow error');
+        if (typeof callbackMap[id] !== 'undefined') {
+          callbackMap[id](null, error);
         }
         if (onerror) {
-          onerror(error ? error : new Error('unknow error'));
+          onerror(error);
           return;
         } else {
-          console.error(error ? error.message : 'unknow error');
+          console.error(error);
         }
       }
     }
@@ -46,15 +36,12 @@ function Master() {
   this.run = function(script, callback) {
     if (this.readyState() !== 1) return;
     const sessionId = this.sessionId();
+    const id = this.send(`${protocol.script}${sessionId}/${script}`);
     if (typeof callback === 'function') {
-      const id = uuidv4();
       callbackMap[id] = callback;
-      this.send(`${protocol.script}${sessionId}/${id}/${script}`);
       setTimeout(() => {
         delete callbackMap[id];
       }, 180000); // 5min timeout
-    } else {
-      this.send(`${protocol.script}${sessionId}/${script}`);
     }
   };
 }

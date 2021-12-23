@@ -4,43 +4,33 @@ import { protocol, idReg } from './config';
 import Base from './base';
 
 function Client() {
-  const onerror = arguments.length > 4 && typeof arguments[4] === 'function' ? arguments[4] : null;
+  const onerror = arguments.length > 4 && typeof arguments[4] === 'function' ?
+    arguments[4] :
+    (typeof arguments[0] === 'object' && typeof arguments[0].onerror === 'function' ? arguments[0].onerror : null);
   const funcMap = {};
   let context = null;
   const data = {
     connectedCallbacks: [],
     type: 'client',
-    onmessage: ({ data }) => {
+    onmessage: ({ data, id }) => {
       if (!data.indexOf(protocol.script)) {
         const reg = new RegExp(`^${protocol.script}${idReg}`);
         const match = data.match(reg);
         if (match) {
           const sid = match[1];
-          const reg2 = new RegExp(`^${idReg}`);
-          const match2 = match[2].match(reg2);
-          const id = match2 ? match2[1] : '';
-          const script = match2 ? match2[2] : match[2];
+          const script = match[2];
           let result = void 0;
           const send = (err, res) => {
             let message = '';
             if (err) {
-              const msg = err.message ? err.message : 'error';
-              if (id) {
-                message = `${protocol.error}${id}/${msg}`;
-              } else {
-                message = `${protocol.error}${msg}`;
-              }
+              message = `${protocol.error}${err.message ? err.message : 'error'}`;
             } else {
               if (typeof res === 'object') {
                 res = JSON.stringify(res);
               }
-              if (id) {
-                message = `${protocol.result}${id}/${res}`;
-              } else {
-                message = `${protocol.result}${res}`;
-              }
+              message = `${protocol.result}${res}`;
             }
-            this.send(`${protocol.route}${sid}/${message}`);
+            this.send(`${protocol.route}${sid}/${message}#${id}`);
           };
           let bCalled = false;
           try {
@@ -85,7 +75,6 @@ function Client() {
               return;
             }
           }
-          
           if (result instanceof Promise) {
             result.then((res) => send(null, res)).catch((e) => {
               console.error(e);

@@ -50,6 +50,7 @@ function Base(host, port, ssl, timeout, onerror) {
   socket.addEventListener('message', ({ data }) => {
     const msgId = data.match(/#(\w+)$/);
     const message = data.replace(/#\w+$/, '');
+    const id = msgId ? msgId[1] : '';
     if (!message.indexOf(protocol.sid)) {
       sessionId = message.substr(protocol.sid.length);
       return;
@@ -82,14 +83,14 @@ function Base(host, port, ssl, timeout, onerror) {
         arr.length > 1 ? +arr[1] : undefined));
       return;
     }
-    if (msgId && typeof promiseCallback[msgId[1]] !== 'undefined') {
-      const item = promiseCallback[msgId[1]];
+    if (id && typeof promiseCallback[id] !== 'undefined') {
+      const item = promiseCallback[id];
       window.clearTimeout(item.timeoutId);
       item.resolve(message);
-      delete promiseCallback[msgId[1]];
-      // console.log('delete promiseCallback[msgId[1]]', promiseCallback);
+      delete promiseCallback[id];
+      // console.log('delete promiseCallback[id]', promiseCallback);
     }
-    onmessage({ data: message });
+    onmessage({ data: message, id });
   });
   this.on = function(type, func, revmoe) {
     switch (type) {
