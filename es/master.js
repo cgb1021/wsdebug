@@ -1,5 +1,5 @@
 /* 控制端（debug） */
-import { protocol, idReg } from './config';
+import { protocol } from './config';
 import Base from './base';
 
 function Master() {
@@ -24,7 +24,6 @@ function Master() {
         }
         if (onerror) {
           onerror(error);
-          return;
         } else {
           console.error(error);
         }
