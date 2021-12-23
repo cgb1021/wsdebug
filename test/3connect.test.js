@@ -16,6 +16,7 @@ describe('#Client', function () {
     client.on('connect', (arr, opt) => {
       if (typeof opt === 'number') {
         assert.equal(arr[0].name, 'admin5', 'connect opt');
+        assert.equal(arr[0].list.length, 0, 'connect opt');
         if (opt === 1) {
           master.connect('uid_301', 0);
         } else if (opt === 0) {
@@ -41,6 +42,7 @@ describe('#Master', function () {
       });
       master.on('connect', (arr, opt) => {
         if (typeof opt === 'number') {
+          assert.equal(arr[0].name, '0', 'connect opt');
           assert.equal(arr[0].list[0], 'uid_302', 'connect opt');
           if (opt === 1) {
             client.setId('uid_302', 0);
