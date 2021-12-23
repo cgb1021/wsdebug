@@ -8,13 +8,15 @@ function Base(host, port, ssl, timeout, onerror) {
     if (typeof arg.host !== 'undefined') host = arg.host;
     if (typeof arg.port !== 'undefined') port = arg.port;
     if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
-    if (typeof arg.onerror !== 'undefined') onerror = arg.onerror;
+    if (typeof arg.onerror === 'function') onerror = arg.onerror;
     if (typeof arg.timeout !== 'undefined') timeout = arg.timeout;
   }
   const {
     connectedCallbacks,
-    type
+    type,
+    onmessage
   } = arguments[arguments.length - 1];
+  const promiseCallback = {};
   if (!port) {
     port = ssl ? 443 : 8081;
   }
@@ -25,6 +27,7 @@ function Base(host, port, ssl, timeout, onerror) {
   this.name = '';
   this.password = '';
   const socket = new WebSocket(url);
+  let counter = 0;
   socket.addEventListener('error', function (err) {
     if (typeof onerror === 'function') {
       onerror(err);
@@ -45,14 +48,16 @@ function Base(host, port, ssl, timeout, onerror) {
     }
   });
   socket.addEventListener('message', ({ data }) => {
-    if (!data.indexOf(protocol.sid)) {
-      sessionId = data.substr(protocol.sid.length);
+    const msgId = data.match(/#(\w+)$/);
+    const message = data.replace(/#\w+$/, '');
+    if (!message.indexOf(protocol.sid)) {
+      sessionId = message.substr(protocol.sid.length);
       return;
     }
-    if (!data.indexOf(protocol.connect)) {
+    if (!message.indexOf(protocol.connect)) {
       let arr = [''];
       try {
-        arr = data.substr(protocol.connect.length).split('/');
+        arr = message.substr(protocol.connect.length).split('/');
       } catch (e) {
         console.error(e);
       }
@@ -77,6 +82,14 @@ function Base(host, port, ssl, timeout, onerror) {
         arr.length > 1 ? +arr[1] : undefined));
       return;
     }
+    if (msgId && typeof promiseCallback[msgId[1]] !== 'undefined') {
+      const item = promiseCallback[msgId[1]];
+      window.clearTimeout(item.timeoutId);
+      item.resolve(message);
+      delete promiseCallback[msgId[1]];
+      // console.log('delete promiseCallback[msgId[1]]', promiseCallback);
+    }
+    onmessage({ data: message });
   });
   this.on = function(type, func, revmoe) {
     switch (type) {
@@ -95,13 +108,32 @@ function Base(host, port, ssl, timeout, onerror) {
     default: !revmoe ? socket.addEventListener(type, func) : socket.removeEventListener(type, func);
     }
   };
+  this.send = function(msg) {
+    let id = '';
+    if (socket && socket.readyState === 1) {
+      id = `${Date.now()}${counter++}`;
+      socket.send(`${msg}#${id}`);
+    }
+    return id;
+  };
+  this.send2 = function(msg, timeout) {
+    const id = this.send(msg);
+    return new Promise((resolve, reject) => {
+      if (!id) resolve(id);
+      else {
+        const timeoutId = window.setTimeout(() => {
+          delete promiseCallback[id];
+          reject();
+        }, timeout && timeout > 0 ? timeout * 1000 : 5000);
+        promiseCallback[id] = {
+          resolve,
+          timeoutId
+        };
+      }
+    });
+  };
   this.sessionId = function() {
     return sessionId;
-  };
-  this.send = function(msg) {
-    if (socket && socket.readyState === 1) {
-      socket.send(msg);
-    }
   };
   this.close = function() {
     socket && socket.close();
@@ -137,8 +169,8 @@ Base.prototype.version = function (remote) {
   }
   return version;
 };
-Base.prototype.query = function() {
-  this.send(`${protocol.query}1`);
+Base.prototype.query = function () {
+  return this.send2(`${protocol.query}1`);
 };
 
 export default Base;

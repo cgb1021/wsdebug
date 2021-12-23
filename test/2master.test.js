@@ -84,14 +84,13 @@ describe('#Master', function () {
       assert.equal('uid_3,uid_4', gClient.getId());
     })
     it('qeury', function (done) {
-      gClient.on('message', ({ data }) => {
+      gClient.query().then((data) => {
         if (!data.indexOf(QUERY)) {
           const str = data.substr(QUERY.length);
           assert.equal('0:uid_0|uid_1,0:uid_101,0:uid_101', str);
           done();
         }
       });
-      gClient.query();
     })
   })
   describe('##Connect', function () {

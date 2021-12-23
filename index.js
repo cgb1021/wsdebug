@@ -21,7 +21,7 @@ module.exports = function (port = 80, timeout = 30) {
   const clients = {};
   let masterMap = {};
 
-  function sendMessage(conn, data, type = '') {
+  function sendMessage(conn, data, type = '', msgId = '') {
     switch (type) {
     case event.CONNECT:
     case event.QUERY:
@@ -31,9 +31,9 @@ module.exports = function (port = 80, timeout = 30) {
     case event.ROLE:
     case event.ROUTE:
     case event.SID:
-    case event.ID: conn.write(`${type}://${data}`);
+    case event.ID: conn.write(`${type}://${data}${msgId}`);
       break;
-    default: conn.write(data);
+    default: conn.write(`${data}${msgId}`);
     }
   }
   function onConnectIdsChange (client, oldConnectIds) {
@@ -90,7 +90,8 @@ module.exports = function (port = 80, timeout = 30) {
     }
     sendMessage(conn, sessionId, event.SID);
     conn.on('data', function(message) {
-      const match = message.match(/^(\w+):\/\/(.+)$/);
+      const msgId = message.match(/#\w+$/);
+      const match = message.replace(/#\w+$/, '').match(/^(\w+):\/\/(.+)$/);
       const client = clients[sessionId];
       const log = log4js.getLogger();
       const idReg = '(?:([\\w-]+)/)?(.+)$';
@@ -178,13 +179,13 @@ module.exports = function (port = 80, timeout = 30) {
               if (typeof masterMap[key] !== 'undefined' || !client.connectIds.length) return;
               ids = ids.concat(`${client.name ? client.name : '0'}:${client.connectIds.join('|')}`);
             });
-            sendMessage(conn, ids.join(','), event.QUERY);
+            sendMessage(conn, ids.join(','), event.QUERY, msgId ? msgId[0] : '');
           } else {
             const names = [];
             Object.keys(masterMap).forEach((key) => {
               names.push(clients[key].name);
             });
-            sendMessage(conn, names.join(','), event.QUERY);
+            sendMessage(conn, names.join(','), event.QUERY, msgId ? msgId[0] : '');
           }
         }
           return;

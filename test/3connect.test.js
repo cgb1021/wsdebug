@@ -88,15 +88,14 @@ describe('#Master', function () {
       master.password = 'yy123456';
       client.setId(`uid_303`);
       master.on('open', () => {
-        master.query();
-      })
-      master.on('message', ({ data }) => {
-        const protocol = 'query://'
-        if (!data.indexOf(protocol)) {
-          const val = data.substr(protocol.length);
-          assert.match(val, /^client888:uid_303,(?:0:[\w,|]+)+$/, 'test');
-          done();
-        }
+        master.query().then((data) => {
+          const protocol = 'query://'
+          if (!data.indexOf(protocol)) {
+            const val = data.substr(protocol.length);
+            assert.match(val, /^client888:uid_303,(?:0:[\w,|]+)+$/, 'test');
+            done();
+          }
+        });
       })
     })
   })
