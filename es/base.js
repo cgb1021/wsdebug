@@ -3,13 +3,25 @@ import { protocol } from './config';
 const { version } = require('../package.json');
 
 function Base(host, port, ssl, timeout, onerror) {
-  if (arguments.length === 2 && typeof arguments[0] === 'object') {
-    const arg = arguments[0];
-    if (typeof arg.host !== 'undefined') host = arg.host;
-    if (typeof arg.port !== 'undefined') port = arg.port;
-    if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
-    if (typeof arg.onerror === 'function') onerror = arg.onerror;
-    if (typeof arg.timeout !== 'undefined') timeout = arg.timeout;
+  switch (arguments.length) {
+  case 4: timeout = 0;
+    break;
+  case 3: ssl = true;
+    break;
+  case 2:
+    if (typeof arguments[0] === 'object') {
+      const arg = arguments[0];
+      if (typeof arg.host !== 'undefined') host = arg.host;
+      if (typeof arg.port !== 'undefined') port = arg.port;
+      if (typeof arg.ssl !== 'undefined') ssl = arg.ssl;
+      if (typeof arg.onerror === 'function') onerror = arg.onerror;
+      if (typeof arg.timeout !== 'undefined') timeout = arg.timeout;
+    } else {
+      port = 0;
+    }
+    break;
+  case 1: host = '';
+    break;
   }
   const {
     connectedCallbacks,
