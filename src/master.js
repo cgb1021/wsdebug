@@ -33,10 +33,8 @@ function Master() {
   Base.apply(this, [...arguments, data]);
   this.connect = this.setId;
   this.run = function(script, callback) {
-    if (this.readyState() !== 1) return;
-    const sessionId = this.sessionId();
-    const id = this.send(`${protocol.script}${sessionId}/${script}`);
-    if (typeof callback === 'function') {
+    const id = this.send(`${protocol.script}${this.sessionId()}/${script}`);
+    if (id && typeof callback === 'function') {
       callbackMap[id] = callback;
       setTimeout(() => {
         delete callbackMap[id];
