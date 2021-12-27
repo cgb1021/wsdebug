@@ -108,6 +108,12 @@ sessionId()
 @param {String} msg
 send()
 
+@description: send data
+@param {String} msg
+@param {Number} timeout
+@return {Promise}
+send2()
+
 @description: close websocket
 close()
 
@@ -165,6 +171,12 @@ sessionId()
 @description: send data
 @param {String} msg
 send()
+
+@description: send data
+@param {String} msg
+@param {Number} timeout
+@return {Promise}
+send2()
 
 @description: close websocket
 close()

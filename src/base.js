@@ -44,7 +44,6 @@ function Base(host, port, ssl, timeout, onerror) {
   socket.addEventListener('close', () => {
     if (intervalId) {
       intervalId = window.clearInterval(intervalId);
-      intervalId = 0;
     }
   });
   socket.addEventListener('message', ({ data }) => {
