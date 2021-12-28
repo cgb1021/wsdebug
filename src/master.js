@@ -27,6 +27,7 @@ function Master() {
         const error = new Error(result ? result : 'unknow error');
         if (typeof callbackMap[id] !== 'undefined') {
           callbackMap[id](error, null);
+          return;
         }
         if (onerror) {
           onerror(error);
