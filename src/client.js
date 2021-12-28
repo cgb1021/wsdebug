@@ -25,10 +25,7 @@ function Client() {
             if (err) {
               message = `${protocol.error}${err.message ? err.message : 'error'}`;
             } else {
-              if (typeof res === 'object') {
-                res = JSON.stringify(res);
-              }
-              message = `${protocol.result}${res}`;
+              message = `${protocol.result}${JSON.stringify(res)}`;
             }
             this.send(`${protocol.route}${sid}/${message}#${id}`);
           };
@@ -63,21 +60,17 @@ function Client() {
                 bCalled = true;
               }
             }
-          } catch (e) {
-            console.log(e.message ? e.message : e);
-          }
+          } catch (e) {} // eslint-disable-line
           if (!bCalled) {
             try {
               result = eval(script);
             } catch (e) {
-              console.error(e);
               send(e);
               return;
             }
           }
           if (result instanceof Promise) {
             result.then((res) => send(null, res)).catch((e) => {
-              console.error(e);
               send(e);
             });
           } else {

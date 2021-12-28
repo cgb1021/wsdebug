@@ -29,17 +29,18 @@ function Base(host, port, ssl, timeout, onerror) {
     onmessage
   } = arguments[arguments.length - 1];
   const promiseCallback = {};
+  ssl = typeof ssl === 'boolean' && !ssl ? false : true;
   if (!port) {
     port = ssl ? 443 : 8081;
   }
-  const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   let ids = [];
   let sessionId = '';
   let intervalId = 0;
+  let counter = 0;
+  const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
   this.name = '';
   this.password = '';
   const socket = new WebSocket(url);
-  let counter = 0;
   socket.addEventListener('error', function (err) {
     if (typeof onerror === 'function') {
       onerror(err);
@@ -67,12 +68,7 @@ function Base(host, port, ssl, timeout, onerror) {
       return;
     }
     if (!message.indexOf(protocol.connect)) {
-      let arr = [''];
-      try {
-        arr = message.substr(protocol.connect.length).split('/');
-      } catch (e) {
-        console.error(e);
-      }
+      const arr = message.substr(protocol.connect.length).split('/');
       connectedCallbacks.forEach((fn) => fn(
         arr[0] ?
           arr[0].split(',').map((str) => {
@@ -103,6 +99,7 @@ function Base(host, port, ssl, timeout, onerror) {
     }
     onmessage({ data: message, id });
   });
+  this.url = () => url;
   this.on = function(type, func, revmoe) {
     switch (type) {
     case 'connect': if (typeof func === 'function') {

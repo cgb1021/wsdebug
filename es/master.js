@@ -12,8 +12,14 @@ function Master() {
     type: 'master',
     onmessage: ({ data, id }) => {
       if (!data.indexOf(protocol.result)) {
+        let result = data.substr(protocol.result.length);
+        if (result) {
+          try {
+            result = JSON.parse(result);
+          } catch (e) {} // eslint-disable-line
+        }
         if (typeof callbackMap[id] !== 'undefined') {
-          callbackMap[id](data.substr(protocol.result.length));
+          callbackMap[id](result);
         }
       }
       if (!data.indexOf(protocol.error)) {
