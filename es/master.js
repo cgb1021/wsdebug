@@ -19,14 +19,14 @@ function Master() {
           } catch (e) {} // eslint-disable-line
         }
         if (typeof callbackMap[id] !== 'undefined') {
-          callbackMap[id](result);
+          callbackMap[id](null, result);
         }
       }
       if (!data.indexOf(protocol.error)) {
         const result = data.substr(protocol.error.length);
         const error = new Error(result ? result : 'unknow error');
         if (typeof callbackMap[id] !== 'undefined') {
-          callbackMap[id](null, error);
+          callbackMap[id](error, null);
         }
         if (onerror) {
           onerror(error);

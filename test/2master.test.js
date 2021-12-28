@@ -132,25 +132,25 @@ describe('#Master', function () {
     })
     it('run', function (done) {
       master.connect('uid_1,uid_101');
-      gClient.run('getCounter()', (data) => {
+      gClient.run('getCounter()', (e, data) => {
         assert.equal(data, 2, 'getCounter');
         done();
       });
     })
     it('eval', function (done) {
-      gClient.run('location.href', (data) => {
+      gClient.run('location.href', (e, data) => {
         assert.equal(data, 'http://localhost:8082/context.html', 'location.href');
         done();
       });
     })
     it('test', function (done) {
-      gClient.run('test()', (data) => {
+      gClient.run('test()', (e, data) => {
         assert.match(data, /^client_normal:\d+$/, 'test');
         done();
       });
     })
     it('mult', function (done) {
-      master.run('test()', (data) => {
+      master.run('test()', (e, data) => {
         counter++;
         assert.match(data, /^client(_normal|\d):\d+$/, 'mult test');
         if (counter === 3) {

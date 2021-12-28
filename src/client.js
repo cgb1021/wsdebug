@@ -70,9 +70,7 @@ function Client() {
             }
           }
           if (result instanceof Promise) {
-            result.then((res) => send(null, res)).catch((e) => {
-              send(e);
-            });
+            result.then((res) => send(null, res)).catch(send);
           } else {
             send(null, result);
           }

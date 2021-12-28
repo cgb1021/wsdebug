@@ -67,10 +67,10 @@ client.on('close', () => {
 // arr: [{ name: 'string', list: ['string', ...]}, ...], opt: undefined|0|1, 0: decrease, 1: increase
 master.on('connect', (arr, opt) => {
   console.log(arr, opt);
-  master.run('dosomething("test")', (msg) => {
+  master.run('dosomething("test")', (error, msg) => {
     console.log('result', msg);
   })
-  master.run('window.test()', (msg) => {
+  master.run('window.test()', (error, msg) => {
     console.log('result', msg);
   })
 })
