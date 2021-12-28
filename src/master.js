@@ -45,7 +45,7 @@ function Master() {
       callbackMap[id] = callback;
       setTimeout(() => {
         delete callbackMap[id];
-      }, 180000); // 5min timeout
+      }, 90000); // 5min timeout
     }
   };
 }
