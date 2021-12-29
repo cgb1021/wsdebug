@@ -18,14 +18,16 @@ function Master() {
             result = JSON.parse(result);
           } catch (e) {} // eslint-disable-line
         }
-        if (typeof callbackMap[id] !== 'undefined') {
+        if (typeof callbackMap[id] === 'function') {
           callbackMap[id](null, result);
+        } else if (callbackMap[id] && onerror) {
+          onerror(callbackMap[id]);
         }
       }
       if (!data.indexOf(protocol.error)) {
         const result = data.substr(protocol.error.length);
         const error = new Error(result ? result : 'unknow error');
-        if (typeof callbackMap[id] !== 'undefined') {
+        if (typeof callbackMap[id] === 'function') {
           callbackMap[id](error, null);
           return;
         }
@@ -38,13 +40,13 @@ function Master() {
     }
   };
   Base.apply(this, [...arguments, data]);
-  this.run = function(script, callback) {
+  this.run = function(script, callback, timeout) {
     const id = this.send(`${protocol.script}${this.sessionId()}/${script}`);
     if (id && typeof callback === 'function') {
       callbackMap[id] = callback;
       setTimeout(() => {
-        delete callbackMap[id];
-      }, 90000); // 5min timeout
+        callbackMap[id] = new Error('RunTimeout');
+      }, timeout && timeout > 0 ? timeout * 1000 : 90000); // 5min timeout
     }
   };
   this.connect = this.setId;

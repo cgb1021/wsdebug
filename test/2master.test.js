@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { assert } from 'chai';
 import Master from '../es/master';
+import Client from '../es/client';
 
 let gClient2
 
@@ -155,6 +156,46 @@ describe('#Master', function () {
         if (counter === 3) {
           done();
         }
+      });
+    })
+    it('timeout', function (done) {
+      this.timeout(10000);
+      const now = Date.now();
+      const client = new Client('127.0.0.1', 8081, false, 2);
+      client.on('open', () => {
+        client.setId('uid_201');
+        const master = new Master({
+          host: '127.0.0.1',
+          port: 8081,
+          ssl: false,
+          timeout: 2,
+          onerror: (e) => {
+            assert.instanceOf(e, Error, 'Timeout');
+            assert.equal(e.message, 'RunTimeout', 'Timeout2');
+            assert.equal(Math.floor((Date.now() - now) / 1000), 5, 'Timeout3')
+            client.close();
+            master.close();
+            done();
+          }
+        });
+        master.name = 'admin201';
+        master.password = 'yy123456';
+        master.on('open', () => {
+          master.connect('uid_201');
+          master.on('connect', (arr) => {
+            if (arr.length) {
+              master.run('await(5)', (e, data) => {
+              }, 3);
+            }
+          });
+        });
+        client.register('await', (s = 5) => {
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve(s);
+            }, s * 1000);
+          })
+        });
       });
     })
   })

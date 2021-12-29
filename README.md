@@ -189,6 +189,7 @@ query()
 @description: eval client scripts
 @param {String} script
 @param {Function} callback
+@param {Number} timeout
 run()
 
 @description: setId
