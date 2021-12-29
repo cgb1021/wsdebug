@@ -38,7 +38,6 @@ function Master() {
     }
   };
   Base.apply(this, [...arguments, data]);
-  this.connect = this.setId;
   this.run = function(script, callback) {
     const id = this.send(`${protocol.script}${this.sessionId()}/${script}`);
     if (id && typeof callback === 'function') {
@@ -48,6 +47,7 @@ function Master() {
       }, 90000); // 5min timeout
     }
   };
+  this.connect = this.setId;
 }
 Master.prototype = Base.prototype;
 

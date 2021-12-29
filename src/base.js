@@ -7,15 +7,12 @@ function idSplit (str, role) {
   if (str) {
     str.split(',').map((name) => {
       const item = {
-        name,
-        list: []
+        name
       };
       if (role === 'master') {
         const arr = name.split(':');
         item.name = arr[0];
-        if (arr[1]) {
-          item.list = arr[1].split('|');
-        }
+        item.list = arr[1] ? arr[1].split('|') : [];
       }
       list.push(item);
     });
@@ -109,6 +106,8 @@ function Base(host, port, ssl, timeout, onerror) {
   });
   this.role = () => role;
   this.url = () => url;
+  this.sessionId = () => sessionId;
+  this.readyState = () => socket.readyState;
   this.on = function(type, func, revmoe) {
     switch (type) {
     case 'connect': if (typeof func === 'function') {
@@ -150,14 +149,8 @@ function Base(host, port, ssl, timeout, onerror) {
       }
     });
   };
-  this.sessionId = function() {
-    return sessionId;
-  };
   this.close = function() {
     socket && socket.close();
-  };
-  this.readyState = function() {
-    return socket.readyState;
   };
   this.setId = function(str, opt = 1) {
     const arr = str.split(',');
@@ -181,9 +174,11 @@ function Base(host, port, ssl, timeout, onerror) {
     return ids;
   };
 }
-Base.prototype.version = function (remote) {
+Base.prototype.version = async function (remote) {
   if (remote) {
-    return this.send(`${protocol.version}*`);
+    return this.send2(`${protocol.version}*`).then((data) => {
+      return data.substr(protocol.version.length);
+    });
   }
   return version;
 };

@@ -16,7 +16,7 @@ describe('#Client', function () {
     client.on('connect', (arr, opt) => {
       if (typeof opt === 'number') {
         assert.equal(arr[0].name, 'admin5', 'connect opt');
-        assert.equal(arr[0].list.length, 0, 'connect opt');
+        assert.equal(typeof arr[0].list, 'undefined', 'connect opt');
         if (opt === 1) {
           master.connect('uid_301', 0);
         } else if (opt === 0) {
@@ -24,7 +24,7 @@ describe('#Client', function () {
         }
       } else {
         assert.equal(opt, undefined, 'connect undefined');
-        assert.equal(arr.length, 0, 'connect empty');
+        assert.isTrue(Array.isArray(arr), 'connect opt');
       }
     })
   })
