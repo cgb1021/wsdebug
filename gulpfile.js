@@ -33,7 +33,8 @@ gulp.task('rollup', () => {
 gulp.task('babel', () => {
   return gulp.src('./dist/**/*')
     .pipe(babel({
-      presets: [['@babel/preset-env', { 'modules': false }]]
+      presets: [['@babel/preset-env', { 'modules': false }]],
+      plugins: [['@babel/plugin-transform-runtime', {'regenerator': true}]]
     }))
     .pipe(uglify())
     .pipe(gulp.dest('./dist'));
@@ -41,7 +42,8 @@ gulp.task('babel', () => {
 gulp.task('lib', () => {
   return gulp.src('./src/**/*')
     .pipe(babel({
-      presets: [['@babel/preset-env', { 'modules': 'commonjs' }]]
+      presets: [['@babel/preset-env', { 'modules': 'commonjs' }]],
+      plugins: [['@babel/plugin-transform-runtime', {'regenerator': true}]]
     }))
     .pipe(gulp.dest('./lib'));
 });
