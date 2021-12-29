@@ -3,7 +3,7 @@ import { assert } from 'chai';
 import Client from '../es/client';
 import Master from '../es/master';
 
-let gClient
+let gClient1
 let counter = 0;
 
 describe('#Client', function () {
@@ -11,7 +11,7 @@ describe('#Client', function () {
     it('normal', function (done) {
       this.timeout(5000);
       const client = new Client('127.0.0.1', 8081, false, 2);
-      gClient = client;
+      gClient1 = client;
       let result = 0;
       setTimeout(() => {
         assert.equal(result, 1, 'SetTimeout');
@@ -78,10 +78,17 @@ describe('#Client', function () {
   })
   describe('##ID', function () {
     it('set', function () {
-      gClient.setId(`uid_${counter++}`);
-      assert.equal('uid_0', gClient.getId());
-      gClient.setId(`uid_${counter++}`);
-      assert.equal('uid_0,uid_1', gClient.getId());
+      gClient1.setId(`uid_${counter++}`);
+      assert.equal('uid_0', gClient1.getId());
+      gClient1.setId(`uid_${counter++}`);
+      assert.equal('uid_0,uid_1', gClient1.getId());
+    })
+    it('qeury', function (done) {
+      gClient1.query().then((data) => {
+        assert.isTrue(Array.isArray(data));
+        assert.equal(data[0].name, 'admin3');
+        done();
+      });
     })
   })
   describe('##Script', function () {
@@ -100,11 +107,11 @@ describe('#Client', function () {
       client2.register('test', () => {
         return `client2:${Date.now()}`;
       });
-      gClient.register('getCounter', () => {
+      gClient1.register('getCounter', () => {
         assert.equal(counter, 2, 'Register');
         return counter;
       });
-      gClient.register('test', () => {
+      gClient1.register('test', () => {
         return `client_normal:${Date.now()}`;
       });
     })

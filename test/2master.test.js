@@ -2,14 +2,14 @@
 import { assert } from 'chai';
 import Master from '../es/master';
 
-let gClient
+let gClient2
 
 describe('#Master', function () {
   describe('##Create', function () {
     it('normal', function (done) {
       this.timeout(5000);
       const master = new Master('127.0.0.1', 8081, false, 2);
-      gClient = master;
+      gClient2 = master;
       let result = 0;
       setTimeout(() => {
         assert.equal(result, 1, 'SetTimeout');
@@ -79,24 +79,23 @@ describe('#Master', function () {
   })
   describe('##ID', function () {
     it('set', function () {
-      gClient.setId(`uid_3,uid_4`);
-      assert.equal('uid_3,uid_4', gClient.getId());
-    })
-    it('qeury', function (done) {
-      gClient.query().then((data) => {
-        assert.equal('0:uid_0|uid_1,0:uid_101,0:uid_101', data);
-        done();
-      });
+      gClient2.setId(`uid_3,uid_4`);
+      assert.equal('uid_3,uid_4', gClient2.getId());
     })
   })
   describe('##Connect', function () {
+    let bDone = false
     it('increase', function (done) {
-      gClient.on('connect', (data) => {
-        assert.equal(data[0].list[0], 'uid_0', 'Increase');
-        done();
+      gClient2.on('connect', (data) => {
+        assert.isTrue(Array.isArray(data));
+        if (data.length && !bDone) {
+          assert.equal(data[0].list[0], 'uid_0', 'Increase');
+          bDone = true;
+          done();
+        }
       });
-      gClient.connect('uid_0');
-      assert.equal('uid_3,uid_4,uid_0', gClient.getId());
+      gClient2.connect('uid_0');
+      assert.equal('uid_3,uid_4,uid_0', gClient2.getId());
     })
     it('decrease', function (done) {
       const master = new Master('127.0.0.1', 8081, false, 2);
@@ -132,19 +131,19 @@ describe('#Master', function () {
     })
     it('run', function (done) {
       master.connect('uid_1,uid_101');
-      gClient.run('getCounter()', (e, data) => {
+      gClient2.run('getCounter()', (e, data) => {
         assert.equal(data, 2, 'getCounter');
         done();
       });
     })
     it('eval', function (done) {
-      gClient.run('location.href', (e, data) => {
+      gClient2.run('location.href', (e, data) => {
         assert.equal(data, 'http://localhost:8082/context.html', 'location.href');
         done();
       });
     })
     it('test', function (done) {
-      gClient.run('test()', (e, data) => {
+      gClient2.run('test()', (e, data) => {
         assert.match(data, /^client_normal:\d+$/, 'test');
         done();
       });

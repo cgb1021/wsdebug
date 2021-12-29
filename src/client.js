@@ -11,7 +11,7 @@ function Client() {
   let context = null;
   const data = {
     connectedCallbacks: [],
-    type: 'client',
+    role: 'client',
     onmessage: ({ data, id }) => {
       if (!data.indexOf(protocol.script)) {
         const reg = new RegExp(`^${protocol.script}${idReg}`);

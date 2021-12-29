@@ -2,6 +2,27 @@
 import { protocol } from './config';
 const { version } = require('../package.json');
 
+function idSplit (str, role) {
+  const list = [];
+  if (str) {
+    str.split(',').map((name) => {
+      const item = {
+        name,
+        list: []
+      };
+      if (role === 'master') {
+        const arr = name.split(':');
+        item.name = arr[0];
+        if (arr[1]) {
+          item.list = arr[1].split('|');
+        }
+      }
+      list.push(item);
+    });
+  }
+  return list;
+}
+
 function Base(host, port, ssl, timeout, onerror) {
   switch (arguments.length) {
   case 4: timeout = 0;
@@ -25,7 +46,7 @@ function Base(host, port, ssl, timeout, onerror) {
   }
   const {
     connectedCallbacks,
-    type,
+    role,
     onmessage
   } = arguments[arguments.length - 1];
   const promiseCallback = {};
@@ -49,7 +70,7 @@ function Base(host, port, ssl, timeout, onerror) {
     }
   });
   socket.addEventListener('open', () => {
-    this.send(`${protocol.role}${type}/${this.name}:${this.password}`);
+    this.send(`${protocol.role}${role}/${this.name}:${this.password}`);
     if (timeout && timeout > 0) {
       intervalId = window.setInterval(() => this.send(`${protocol.live}1`), timeout * 1000);
     }
@@ -69,25 +90,12 @@ function Base(host, port, ssl, timeout, onerror) {
     }
     if (!message.indexOf(protocol.connect)) {
       const arr = message.substr(protocol.connect.length).split('/');
+      const arg1 = idSplit(arr[0], role);
+      const arg2 = arr.length > 1 ? +arr[1] : undefined;
       connectedCallbacks.forEach((fn) => fn(
-        arr[0] ?
-          arr[0].split(',').map((str) => {
-            if (type === 'master') {
-              const arr = str.split(':');
-              return {
-                name: arr[0],
-                list: arr[1] ? arr[1].split('|') : []
-              };
-            } else {
-              return {
-                name: str,
-                list: []
-              };
-            }
-          })
-          :
-          [],
-        arr.length > 1 ? +arr[1] : undefined));
+        arg1,
+        arg2
+      ));
       return;
     }
     if (id && typeof promiseCallback[id] !== 'undefined') {
@@ -99,6 +107,7 @@ function Base(host, port, ssl, timeout, onerror) {
     }
     onmessage({ data: message, id });
   });
+  this.role = () => role;
   this.url = () => url;
   this.on = function(type, func, revmoe) {
     switch (type) {
@@ -180,7 +189,7 @@ Base.prototype.version = function (remote) {
 };
 Base.prototype.query = function () {
   return this.send2(`${protocol.query}1`).then((data) => {
-    return data.substr(protocol.query.length);
+    return idSplit(data.substr(protocol.query.length), this.role());
   });
 };
 

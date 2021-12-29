@@ -9,7 +9,7 @@ function Master() {
   const callbackMap = {};
   const data = {
     connectedCallbacks: [],
-    type: 'master',
+    role: 'master',
     onmessage: ({ data, id }) => {
       if (!data.indexOf(protocol.result)) {
         let result = data.substr(protocol.result.length);

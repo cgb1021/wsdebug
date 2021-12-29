@@ -89,7 +89,9 @@ describe('#Master', function () {
       client.setId(`uid_303`);
       master.on('open', () => {
         master.query().then((data) => {
-          assert.match(data, /^client888:uid_303,(?:0:[\w,|]+)+$/, 'test');
+          assert.isTrue(Array.isArray(data));
+          assert.equal(data[0].name, 'client888');
+          assert.equal(data[0].list[0], 'uid_303');
           done();
         });
       })
