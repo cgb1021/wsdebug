@@ -90,18 +90,21 @@ function Client() {
   };
   Base.apply(this, [...arguments, data]);
   this.register = function(name, func) {
-    if (typeof func !== 'function') return;
-    funcMap[name] = func;
+    if (name && typeof func === 'function') {
+      funcMap[name] = func;
+    }
   };
-  this.remove = function(name, func) {
-    if (name) return delete funcMap[name];
+  this.remove = function(func) {
     if (typeof func === 'function') {
+      let counter = 0;
       for (const key in funcMap) {
-        if (funcMap[key] === func) {
-          return delete funcMap[key];
+        if (funcMap[key] === func && delete funcMap[key]) {
+          counter++;
         }
       }
+      return !!counter;
     }
+    if (func) return delete funcMap[func];
     return false;
   };
   this.bind = function(self) {

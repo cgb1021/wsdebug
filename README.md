@@ -22,16 +22,9 @@ function dosomething (arg) {
   console.log('do something', arg);
   return Date.now();
 }
-let intervalId = 0
 const client = new Client('127.0.0.1', 8081, false, 3);
-client.receive = function(msg) {
-  console.log(msg);
-};
 client.on('open', () => {
   client.setId(`uid_123456`);
-})
-client.on('close', () => {
-  clearInterval(intervalId)
 })
 client.on('connect', (data) => {
   console.log('master connected', data);
@@ -51,28 +44,23 @@ window.test = function () {
 import { Master } from 'wsdebug/es';
 // import { Master } from 'wsdebug/lib';
 
-let intervalId = 0;
 const master = new Master('127.0.0.1', 8081, false, 3);
-master.name = 'admin';
+master.name = 'admin1';
 master.password = '123456';
-master.receive = function(msg) {
-  console.log(msg);
-};
 master.on('open', () => {
   master.connect('uid_123456');
-})
-client.on('close', () => {
-  clearInterval(intervalId)
 })
 // arr: [{ name: 'string', list: ['string', ...]}, ...], opt: undefined|0|1, 0: decrease, 1: increase
 master.on('connect', (arr, opt) => {
   console.log(arr, opt);
-  master.run('dosomething("test")', (error, msg) => {
-    console.log('result', msg);
-  })
-  master.run('window.test()', (error, msg) => {
-    console.log('result', msg);
-  })
+  if (arr.length) {
+    master.run('dosomething("test")', (error, msg) => {
+      console.log('result', msg);
+    })
+    master.run('window.test()', (error, msg) => {
+      console.log('result', msg);
+    })
+  }
 })
 ```
 
@@ -106,6 +94,7 @@ sessionId()
 
 @description: send data
 @param {String} msg
+@return {String}
 send()
 
 @description: send data

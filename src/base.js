@@ -136,11 +136,11 @@ function Base(host, port, ssl, timeout, onerror) {
   this.send2 = function(msg, timeout) {
     const id = this.send(msg);
     return new Promise((resolve, reject) => {
-      if (!id) resolve(id);
+      if (!id) reject(new Error('NotReady'));
       else {
         const timeoutId = window.setTimeout(() => {
           delete promiseCallback[id];
-          reject();
+          reject(new Error('Timeout'));
         }, timeout && timeout > 0 ? timeout * 1000 : 5000);
         promiseCallback[id] = {
           resolve,

@@ -2,6 +2,7 @@
 import { assert } from 'chai';
 import Client from '../es/client';
 import Master from '../es/master';
+const { version } = require('../package.json');
 
 let gClient1
 let counter = 0;
@@ -33,6 +34,53 @@ describe('#Client', function () {
         assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'Close');
         done();
       });
+    });
+    it('send2', function (done) {
+      this.timeout(4000);
+      const now = Date.now();
+      const client = new Client('127.0.0.1', 8081, false, 3);
+      client.on('open', () => {
+        client.send2('hello', 3).then((data) => {
+          console.log(data);
+        }).catch((e) => {
+          assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'send2');
+          assert.instanceOf(e, Error, 'send2');
+          client.close();
+          done();
+        });
+      });
+    });
+    it('send3', function (done) {
+      this.timeout(4000);
+      const client = new Client('127.0.0.1', 8081, false, 3);
+      client.send2('hello', 3).catch((e) => {
+        assert.instanceOf(e, Error, 'send2');
+        assert.equal(e.message, 'NotReady', 'send2');
+        client.close();
+        done();
+      });
+    });
+    it('version', function (done) {
+      this.timeout(4000);
+      const client = new Client('127.0.0.1', 8081, false, 3);
+      client.on('open', () => {
+        client.version(true).then((data) => {
+          assert.equal(data, version);
+          client.close();
+          done();
+        }).catch((e) => {
+          console.log(e)
+        })
+      });
+    });
+    it('version2', function (done) {
+      this.timeout(4000);
+      const client = new Client('127.0.0.1', 8081, false, 3);
+      client.version().then((data) => {
+        assert.equal(data, version);
+        client.close();
+        done();
+      })
     });
   })
   describe('##Arguments', function () {
@@ -191,7 +239,7 @@ describe('#Client', function () {
     })
     it('register4', function (done) {
       this.timeout(4000);
-      let counter = 0;
+      let counter = 104;
       const client = new Client('127.0.0.1', 8081, false, 2);
       client.on('open', () => {
         client.setId('uid_135');
@@ -209,7 +257,7 @@ describe('#Client', function () {
       master.on('connect', (data) => {
         if (data.length) {
           master.run('test()', (e, data) => {
-            assert.equal(data, 1);
+            assert.equal(data, 105);
             master.close();
             client.close();
             done();
@@ -303,7 +351,7 @@ describe('#Client', function () {
         if (data.length) {
           master.run('test(100, "100")', (e, data) => {
             assert.equal(data, 1);
-            const b = client.remove('', callback);
+            const b = client.remove(callback);
             assert.equal(b, true);
             master.run('test()', (e, data) => {
               assert.instanceOf(e, Error, 'Remove4');

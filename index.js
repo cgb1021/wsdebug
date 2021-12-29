@@ -114,7 +114,7 @@ module.exports = function (port = 80, timeout = 30) {
               }
             });
           }
-          sendMessage(conn, client.connectIds.join(','), event.ID);
+          sendMessage(conn, client.connectIds.join(','), event.ID, msgId ? msgId[0] : '');
           onConnectIdsChange(client, oldConnectIds);
         }
           return;
@@ -136,13 +136,13 @@ module.exports = function (port = 80, timeout = 30) {
                   typeof json[auth[0]] === 'undefined' ||
                   json[auth[0]] !== md5(auth[1])
                 ) {
-                  sendMessage(conn, 'Auth error', event.ERROR);
+                  sendMessage(conn, 'Auth error', event.ERROR, msgId ? msgId[0] : '');
                   return;
                 }
               } catch (e) {
                 const msg = 'unknow error';
                 log.error(e && e.message ? e.message : msg);
-                sendMessage(conn, msg, event.ERROR);
+                sendMessage(conn, msg, event.ERROR, msgId ? msgId[0] : '');
                 return;
               }
               const list = Object.values(masterMap);
@@ -153,7 +153,7 @@ module.exports = function (port = 80, timeout = 30) {
                 onConnectIdsChange(client, oldConnectIds);
                 masterMap[sessionId] = auth[0];
               } else {
-                sendMessage(conn, 'Master exists', event.ERROR);
+                sendMessage(conn, 'Master exists', event.ERROR, msgId ? msgId[0] : '');
                 return;
               }
             }
@@ -168,7 +168,7 @@ module.exports = function (port = 80, timeout = 30) {
           if (client.role === 'client') {
             client.name = auth[0];
           }
-          sendMessage(conn, client.role, event.ROLE);
+          sendMessage(conn, client.role, event.ROLE, msgId ? msgId[0] : '');
         }
           return;
         case event.QUERY: {
@@ -196,7 +196,7 @@ module.exports = function (port = 80, timeout = 30) {
             arr.shift();
             sendMessage(clients[key].connection, arr.join(dataSplit));
           } else {
-            sendMessage(conn, 'route error', event.ERROR);
+            sendMessage(conn, 'route error', event.ERROR, msgId ? msgId[0] : '');
           }
         }
           return;
@@ -207,7 +207,7 @@ module.exports = function (port = 80, timeout = 30) {
           }
           return;
         case event.VERSION:
-          sendMessage(conn, version, event.VERSION);
+          sendMessage(conn, version, event.VERSION, msgId ? msgId[0] : '');
           return;
         }
       }

@@ -25,7 +25,7 @@ describe('#Master', function () {
         const protocol = 'role://';
         if (!data.indexOf(protocol)) {
           result = 1;
-          assert.equal(data.substr(protocol.length), 'master', 'Receive');
+          assert.equal(data.substr(protocol.length).replace(/#[^#]+$/, ''), 'master', 'Receive');
         }
       })
       master.on('close', () => {
@@ -68,7 +68,7 @@ describe('#Master', function () {
       master.on('message', ({ data }) => {
         const protocol = 'role://';
         if (!data.indexOf(protocol)) {
-          assert.equal(data.substr(protocol.length), 'master', 'Receive');
+          assert.equal(data.substr(protocol.length).replace(/#[^#]+$/, ''), 'master', 'Receive');
         }
       })
       master.on('close', () => {
@@ -126,7 +126,7 @@ describe('#Master', function () {
       // console.log('gaclient sessionid', data);
       const protocol = 'role://';
       if (!data.indexOf(protocol)) {
-        assert.equal(data.substr(protocol.length), 'master', 'Receive');
+        assert.equal(data.substr(protocol.length).replace(/#[^#]+$/, ''), 'master', 'Receive');
       }
     })
     it('run', function (done) {
