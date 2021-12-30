@@ -8,7 +8,9 @@
     "lint": "eslint --fix ./index.js ./src ./gulpfile.js",
     "build": "gulp build",
     "dev": "node ./test/server.js",
-    "test": "npm run build && concurrently --kill-others \"node ./test/server.js\" \"karma start ./karma.conf.js\""
+    "test": "npm run build && concurrently --kill-others \"node ./test/server.js\" \"karma start ./karma.conf.js\"",
+    "testci": "karma start ./karma.conf.js",
+    "codecov": "./node_modules/.bin/codecov"
   },
   "keywords": [
     "websocket",
@@ -28,6 +30,7 @@
     "babel-loader": "^8.2.2",
     "babel-plugin-istanbul": "^6.0.0",
     "chai": "^4.3.4",
+    "codecov": "^3.8.3",
     "concurrently": "^6.4.0",
     "del": "^5.1.0",
     "eslint": "^7.31.0",
