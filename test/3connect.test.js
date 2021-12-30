@@ -42,11 +42,11 @@ describe('#Client', function () {
     client.on('connect', (arr, opt) => {
       if (arr.length) {
         counter++;
-        assert.equal(counter, 1, 'connect remove');
+        assert.equal(counter, 1, 'connect remove1');
         client.on('connect', undefined, 1);
         master.close();
         window.setTimeout(() => {
-          assert.equal(counter, 1, 'connect remove');
+          assert.equal(counter, 1, 'connect remove2');
           client.close();
           done()
         }, 3000);

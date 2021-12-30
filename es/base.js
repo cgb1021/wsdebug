@@ -165,10 +165,10 @@ function Base(host, port, ssl, timeout, onerror) {
     socket && socket.close();
   };
   this.setId = function(str, opt = 1) {
-    const arr = str.split(',');
-    if (arr.length && arr[0]) {
+    if (str) {
+      const arr = str.split(',');
       arr.forEach((id) => {
-        if (/^[\w,.-]+$/.test(id)) {
+        if (id && /^[\w,.-]+$/.test(id)) {
           const index = ids.indexOf(id);
           if (opt && index === -1) {
             ids.push(id);

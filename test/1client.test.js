@@ -20,6 +20,7 @@ describe('#Client', function () {
       }, 4000)
       client.on('open', () => {
         assert.equal(result, 0, 'Open');
+        assert.equal(client.readyState(), 1, 'readyState');
         result = 1;
       });
       client.on('close', () => {
@@ -82,6 +83,26 @@ describe('#Client', function () {
         done();
       })
     });
+    it('remove event', function (done) {
+      this.timeout(5000);
+      let counter = 0;
+      const client = new Client('127.0.0.1', 8081, false, 3);
+      const func = ({ data }) => {
+        if (!data.indexOf('version://')) {
+          counter++;
+          assert.equal(counter, 1, 'event remove1');
+          client.version(1);
+          client.on('message', func, 1);
+          window.setTimeout(() => {
+            assert.equal(counter, 1, 'event remove2');
+            client.close();
+            done()
+          }, 2000);
+        }
+      }
+      client.on('message', func)
+      client.version(1);
+    });
   })
   describe('##Arguments', function () {
     it('object', function (done) {
@@ -130,6 +151,13 @@ describe('#Client', function () {
       assert.equal('uid_0', gClient1.getId());
       gClient1.setId(`uid_${counter++}`);
       assert.equal('uid_0,uid_1', gClient1.getId());
+    })
+    it('set2', function () {
+      const client = new Client();
+      client.setId('uid1,uid2');
+      assert.equal(2, client.getId().length);
+      client.setId();
+      assert.equal(0, client.getId().length);
     })
     it('qeury', function (done) {
       gClient1.query().then((data) => {
