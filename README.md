@@ -1,5 +1,6 @@
 # wsdebug
-
+[![Travis CI](https://travis-ci.com/cgb1021/wsdebug.svg?branch=master)](https://travis-ci.com/github/cgb1021/wsdebug)
+[![Codecov](https://img.shields.io/codecov/c/github/cgb1021/wsdebug.svg)](https://codecov.io/gh/cgb1021/wsdebug)
 使用websocket对远程页面进行debug调试。
 
 ## step1. server
