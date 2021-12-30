@@ -23,9 +23,7 @@ function dosomething (arg) {
   return Date.now();
 }
 const client = new Client('127.0.0.1', 8081, false, 3);
-client.on('open', () => {
-  client.setId(`uid_123456`);
-})
+client.setId(`uid_123456`);
 client.on('connect', (data) => {
   console.log('master connected', data);
 })
@@ -47,9 +45,7 @@ import { Master } from 'wsdebug/es';
 const master = new Master('127.0.0.1', 8081, false, 3);
 master.name = 'admin1';
 master.password = '123456';
-master.on('open', () => {
-  master.connect('uid_123456');
-})
+master.connect('uid_123456');
 // arr: [{ name: 'string', list: ['string', ...]}, ...], opt: undefined|0|1, 0: decrease, 1: increase
 master.on('connect', (arr, opt) => {
   console.log(arr, opt);

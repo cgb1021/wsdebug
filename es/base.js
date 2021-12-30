@@ -47,18 +47,18 @@ function Base(host, port, ssl, timeout, onerror) {
     onmessage
   } = arguments[arguments.length - 1];
   const promiseCallback = {};
-  ssl = typeof ssl === 'boolean' && !ssl ? false : true;
-  if (!port) {
-    port = ssl ? 443 : 8081;
-  }
+  const delayMsgs = [];
   let ids = [];
   let sessionId = '';
   let intervalId = 0;
   let counter = 0;
-  const url = `${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`;
+  ssl = typeof ssl === 'boolean' && !ssl ? false : true;
+  if (!port) {
+    port = ssl ? 443 : 8081;
+  }
   this.name = '';
   this.password = '';
-  const socket = new WebSocket(url);
+  const socket = new WebSocket(`${ssl ? 'wss' : 'ws'}://${host || '127.0.0.1'}:${port}/websocket`);
   socket.addEventListener('error', function (err) {
     if (typeof onerror === 'function') {
       onerror(err);
@@ -67,9 +67,13 @@ function Base(host, port, ssl, timeout, onerror) {
     }
   });
   socket.addEventListener('open', () => {
-    this.send(`${protocol.role}${role}/${this.name}:${this.password}`);
     if (timeout && timeout > 0) {
       intervalId = window.setInterval(() => this.send(`${protocol.live}1`), timeout * 1000);
+    }
+    this.send(`${protocol.role}${role}/${this.name}:${this.password}`);
+    if (delayMsgs.length) {
+      delayMsgs.forEach(({ msg, id }) => socket.send(`${msg}#${id}`));
+      delayMsgs.length = 0;
     }
   });
   socket.addEventListener('close', () => {
@@ -105,7 +109,7 @@ function Base(host, port, ssl, timeout, onerror) {
     onmessage({ data: message, id });
   });
   this.role = () => role;
-  this.url = () => url;
+  this.url = () => socket.url;
   this.sessionId = () => sessionId;
   this.readyState = () => socket.readyState;
   this.on = function(type, func, revmoe) {
@@ -126,9 +130,17 @@ function Base(host, port, ssl, timeout, onerror) {
     }
   };
   this.send = function(msg) {
-    let id = '';
-    if (socket && socket.readyState === 1) {
-      id = `${Date.now()}${counter++}`;
+    if (socket.readyState > 1) {
+      return '';
+    }
+    let id = `${Date.now()}${counter++}`;
+    if (!socket.readyState) {
+      delayMsgs.push({
+        msg,
+        id
+      })
+    }
+    if (socket.readyState === 1) {
       socket.send(`${msg}#${id}`);
     }
     return id;
@@ -136,7 +148,7 @@ function Base(host, port, ssl, timeout, onerror) {
   this.send2 = function(msg, timeout) {
     const id = this.send(msg);
     return new Promise((resolve, reject) => {
-      if (!id) reject(new Error('NotReady'));
+      if (!id) reject(new Error('Close'));
       else {
         const timeoutId = window.setTimeout(() => {
           delete promiseCallback[id];

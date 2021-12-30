@@ -39,39 +39,39 @@ describe('#Client', function () {
       this.timeout(4000);
       const now = Date.now();
       const client = new Client('127.0.0.1', 8081, false, 3);
-      client.on('open', () => {
-        client.send2('hello', 3).then((data) => {
-          console.log(data);
-        }).catch((e) => {
-          assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'send2');
-          assert.instanceOf(e, Error, 'send2');
-          client.close();
-          done();
-        });
-      });
-    });
-    it('send3', function (done) {
-      this.timeout(4000);
-      const client = new Client('127.0.0.1', 8081, false, 3);
-      client.send2('hello', 3).catch((e) => {
+      client.send2('hello', 3).then((data) => {
+        console.log(data);
+      }).catch((e) => {
+        assert.equal(Math.floor((Date.now() - now) / 1000), 3, 'send2');
         assert.instanceOf(e, Error, 'send2');
-        assert.equal(e.message, 'NotReady', 'send2');
         client.close();
         done();
       });
     });
+    it('send3', function (done) {
+      this.timeout(4000);
+      const client = new Client('127.0.0.1', 8081, false, 0);
+      client.on('close', () => {
+        client.send2('hello send3', 3).then((any) => {
+          assert.isNaN(any, 'Send3');
+        }).catch((e) => {
+          assert.instanceOf(e, Error, 'send2');
+          assert.equal(e.message, 'Close', 'send2');
+          client.close();
+          done();
+        });
+      })
+    });
     it('version', function (done) {
       this.timeout(4000);
       const client = new Client('127.0.0.1', 8081, false, 3);
-      client.on('open', () => {
-        client.version(true).then((data) => {
-          assert.equal(data, version);
-          client.close();
-          done();
-        }).catch((e) => {
-          console.log(e)
-        })
-      });
+      client.version(true).then((data) => {
+        assert.equal(data, version);
+        client.close();
+        done();
+      }).catch((e) => {
+        console.log(e)
+      })
     });
     it('version2', function (done) {
       this.timeout(4000);
@@ -92,12 +92,12 @@ describe('#Client', function () {
     });
     it('empty', function () {
       const client = new Client();
-      assert.equal(client.url(), `wss://127.0.0.1:443/websocket`, 'Empty');
+      assert.equal(client.url(), `wss://127.0.0.1/websocket`, 'Empty');
     });
     it('one', function () {
       const host = '172.0.0.1';
       const client = new Client(host);
-      assert.equal(client.url(), `wss://${host}:443/websocket`, 'One');
+      assert.equal(client.url(), `wss://${host}/websocket`, 'One');
     });
     it('two', function () {
       const host = '172.0.0.1';
@@ -142,16 +142,12 @@ describe('#Client', function () {
   describe('##Script', function () {
     it('register', function () {
       const client = new Client('127.0.0.1', 8081, false, 2);
-      client.on('open', () => {
-        client.setId('uid_101');
-      });
+      client.setId('uid_101');
       client.register('test', () => {
         return `client1:${Date.now()}`;
       });
       const client2 = new Client('127.0.0.1', 8081, false, 2);
-      client2.on('open', () => {
-        client2.setId('uid_101');
-      });
+      client2.setId('uid_101');
       client2.register('test', () => {
         return `client2:${Date.now()}`;
       });
@@ -174,17 +170,13 @@ describe('#Client', function () {
         c: 'objc'
       }
       const client = new Client('127.0.0.1', 8081, false, 2);
-      client.on('open', () => {
-        client.setId('uid_133');
-      });
+      client.setId('uid_133');
       client.register('test', callback);
       client.bind(obj);
       const master = new Master('127.0.0.1', 8081, false, 2);
       master.name = 'admin133'
       master.password = 'yy123456'
-      master.on('open', () => {
-        master.setId('uid_133');
-      });
+      master.setId('uid_133');
       master.on('connect', (data) => {
         if (data.length) {
           master.run('test(100, "100", { a: { b: "250"}}, [0, 360])', (e, data) => {
@@ -212,16 +204,12 @@ describe('#Client', function () {
         c: 'objc'
       }
       const client = new Client('127.0.0.1', 8081, false, 2);
-      client.on('open', () => {
-        client.setId('uid_134');
-      });
+      client.setId('uid_134');
       client.bind(obj);
       const master = new Master('127.0.0.1', 8081, false, 2);
       master.name = 'admin134'
       master.password = 'yy123456'
-      master.on('open', () => {
-        master.setId('uid_134');
-      });
+      master.setId('uid_134');
       master.on('connect', (data) => {
         if (data.length) {
           master.run('test2(100, "100", { a: { b: "250"}})', (e, data) => {
@@ -241,9 +229,7 @@ describe('#Client', function () {
       this.timeout(4000);
       let counter = 104;
       const client = new Client('127.0.0.1', 8081, false, 2);
-      client.on('open', () => {
-        client.setId('uid_135');
-      });
+      client.setId('uid_135');
       client.register('test', async function () {
         counter++;
         return counter;
@@ -251,9 +237,7 @@ describe('#Client', function () {
       const master = new Master('127.0.0.1', 8081, false, 2);
       master.name = 'admin135'
       master.password = 'yy123456'
-      master.on('open', () => {
-        master.setId('uid_135');
-      });
+      master.setId('uid_135');
       master.on('connect', (data) => {
         if (data.length) {
           master.run('test()', (e, data) => {
@@ -269,18 +253,14 @@ describe('#Client', function () {
       this.timeout(4000);
       const msg = 'register5 test';
       const client = new Client('127.0.0.1', 8081, false, 2);
-      client.on('open', () => {
-        client.setId('uid_136');
-      });
+      client.setId('uid_136');
       client.register('test', async function () {
         throw new Error(msg);
       });
       const master = new Master('127.0.0.1', 8081, false, 2);
       master.name = 'admin136'
       master.password = 'yy123456'
-      master.on('open', () => {
-        master.setId('uid_136');
-      });
+      master.setId('uid_136');
       master.on('connect', (data) => {
         if (data.length) {
           master.run('test()', (e, data) => {
@@ -298,9 +278,7 @@ describe('#Client', function () {
       this.timeout(4000);
       let counter = 0;
       const client = new Client('127.0.0.1', 8081, false, 2);
-      client.on('open', () => {
-        client.setId('uid_131');
-      });
+      client.setId('uid_131');
       client.register('test', () => {
         counter++;
         return counter;
@@ -308,9 +286,7 @@ describe('#Client', function () {
       const master = new Master('127.0.0.1', 8081, false, 2);
       master.name = 'admin131'
       master.password = 'yy123456'
-      master.on('open', () => {
-        master.setId('uid_131');
-      });
+      master.setId('uid_131');
       master.on('connect', (data) => {
         if (data.length) {
           master.run('test()', (e, data) => {
@@ -337,16 +313,12 @@ describe('#Client', function () {
         return counter;
       };
       const client = new Client('127.0.0.1', 8081, false, 2);
-      client.on('open', () => {
-        client.setId('uid_132');
-      });
+      client.setId('uid_132');
       client.register('test', callback);
       const master = new Master('127.0.0.1', 8081, false, 2);
       master.name = 'admin132'
       master.password = 'yy123456'
-      master.on('open', () => {
-        master.setId('uid_132');
-      });
+      master.setId('uid_132');
       master.on('connect', (data) => {
         if (data.length) {
           master.run('test(100, "100")', (e, data) => {
