@@ -9,7 +9,7 @@
     "build": "gulp build",
     "dev": "node ./test/server.js",
     "test": "npm run build && concurrently --kill-others \"node ./test/server.js\" \"karma start ./karma.conf.js\"",
-    "testci": "concurrently --kill-others \"node ./test/server.js\" \"karma start ./karma.conf.js\"",
+    "testci": "concurrently --kill-others \"node ./test/server.js\"",
     "codecov": "./node_modules/.bin/codecov"
   },
   "keywords": [
