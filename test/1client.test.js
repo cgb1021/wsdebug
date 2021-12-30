@@ -113,27 +113,24 @@ describe('#Client', function () {
     });
     it('empty', function () {
       const client = new Client();
-      assert.equal(client.url(), `wss://127.0.0.1/websocket`, 'Empty');
+      assert.equal(client.url(), `ws://127.0.0.1:8081/websocket`, 'Empty');
     });
     it('one', function () {
       const host = '172.0.0.1';
       const client = new Client(host);
-      assert.equal(client.url(), `wss://${host}/websocket`, 'One');
+      assert.equal(client.url(), `ws://${host}:8081/websocket`, 'One');
     });
     it('two', function () {
       const host = '172.0.0.1';
       const port = 8181;
       const client = new Client(host, port);
-      assert.equal(client.url(), `wss://${host}:${port}/websocket`, 'Two');
+      assert.equal(client.url(), `ws://${host}:${port}/websocket`, 'Two');
     });
-    it('three', function (done) {
+    it('three', function () {
       const host = '127.0.0.1';
       const port = 8081;
-      const client = new Client(host, port, false);
-      client.on('open', () => {
-        assert.equal(client.url(), `ws://${host}:${port}/websocket`, 'Three');
-        done();
-      });
+      const client = new Client(host, port, 1);
+      assert.equal(client.url(), `wss://${host}:${port}/websocket`, 'Three');
     });
     it('five', function (done) {
       this.timeout(4000);

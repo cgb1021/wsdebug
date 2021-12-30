@@ -24,7 +24,7 @@ function Base(host, port, ssl, timeout, onerror) {
   switch (arguments.length) {
   case 4: timeout = 0;
     break;
-  case 3: ssl = true;
+  case 3: ssl = typeof ssl !== 'object' && ssl ? true : false;
     break;
   case 2:
     if (typeof arguments[0] === 'object') {
@@ -52,7 +52,6 @@ function Base(host, port, ssl, timeout, onerror) {
   let sessionId = '';
   let intervalId = 0;
   let counter = 0;
-  ssl = typeof ssl === 'boolean' && !ssl ? false : true;
   if (!port) {
     port = ssl ? 443 : 8081;
   }
