@@ -28,6 +28,80 @@ describe('#Client', function () {
       }
     })
   })
+  it('remove', function (done) {
+    this.timeout(5000);
+    const client = new Client('127.0.0.1', 8081, false, 2);
+    const master = new Master('127.0.0.1', 8081, false, 2);
+    master.name = 'admin301';
+    master.password = 'yy123456';
+    let counter = 0;
+    client.on('open', () => {
+      client.setId(`uid_304`);
+      master.connect('uid_304');
+    });
+    client.on('connect', (arr, opt) => {
+      if (arr.length) {
+        counter++;
+        assert.equal(counter, 1, 'connect remove');
+        client.on('connect', undefined, 1);
+        master.close();
+        window.setTimeout(() => {
+          assert.equal(counter, 1, 'connect remove');
+          client.close();
+          done()
+        }, 3000);
+      }
+    })
+  })
+  it('remove2', function (done) {
+    this.timeout(5000);
+    const client = new Client('127.0.0.1', 8081, false, 2);
+    const master = new Master('127.0.0.1', 8081, false, 2);
+    master.name = 'admin301';
+    master.password = 'yy123456';
+    let counter = 0;
+    const connect = (arr, opt) => {
+      if (arr.length) {
+        counter++;
+        assert.equal(counter, 1, 'connect remove');
+        client.on('connect', connect, 1);
+        master.close();
+        window.setTimeout(() => {
+          assert.equal(counter, 1, 'connect remove');
+          client.close();
+          done()
+        }, 3000);
+      }
+    }
+    client.on('open', () => {
+      client.setId(`uid_304`);
+      master.connect('uid_304');
+    });
+    client.on('connect', connect)
+  })
+  it('error', function (done) {
+    this.timeout(5000);
+    const msg = 'from master';
+    const client = new Client('127.0.0.1', 8081, false, 2, (e) => {
+      assert.instanceOf(e, Error, 'error');
+      assert.equal(e.message, msg, 'error');
+      client.close();
+      master.close();
+      done();
+    });
+    const master = new Master('127.0.0.1', 8081, false, 2);
+    master.name = 'admin301';
+    master.password = 'yy123456';
+    client.setId(`uid_304`);
+    master.on('open', () => {
+      master.connect('uid_304');
+    });
+    client.on('connect', (arr, opt) => {
+      if (arr.length) {
+        master.send(`error://${msg}`);
+      }
+    })
+  })
 });
 describe('#Master', function () {
   describe('##ID', function () {

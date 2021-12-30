@@ -78,12 +78,12 @@ function Client() {
         return;
       }
       if (!data.indexOf(protocol.error)) {
-        const msg = data.substr(protocol.error.length);
+        const result = data.substr(protocol.error.length);
         if (onerror) {
-          onerror(new Error(msg));
+          onerror(new Error(result ? result : 'unknow error'));
           return;
         } else {
-          console.error(msg);
+          console.error(result);
         }
       }
     }
