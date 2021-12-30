@@ -18,6 +18,7 @@ addons:
 #  - echo $TRAVIS_BUILD_DIR/test/data
 
 script:
+  - npm cache clean --force
   - npm i
   - npm run testci
 after_script:
