@@ -69,7 +69,7 @@ function Base(host, port, ssl, timeout, onerror) {
     if (timeout && timeout > 0) {
       intervalId = window.setInterval(() => this.send(`${protocol.live}1`), timeout * 1000);
     }
-    this.send(`${protocol.role}${role}/${this.name}:${this.password}`);
+    this.setRole();
     if (delayMsgs.length) {
       delayMsgs.forEach(({ msg, id }) => socket.send(`${msg}#${id}`));
       delayMsgs.length = 0;
@@ -111,6 +111,9 @@ function Base(host, port, ssl, timeout, onerror) {
   this.url = () => socket.url;
   this.sessionId = () => sessionId;
   this.readyState = () => socket.readyState;
+  this.setRole = function () {
+    this.send(`${protocol.role}${role}/${this.name}:${this.password}`);
+  }
   this.on = function(type, func, revmoe) {
     switch (type) {
     case 'connect': if (typeof func === 'function') {

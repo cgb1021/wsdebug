@@ -154,6 +154,9 @@ on()
 @return {String}
 sessionId()
 
+@description: set role & name & password
+setRole()
+
 @description: send data
 @param {String} msg
 send()
