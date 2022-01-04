@@ -69,7 +69,7 @@ function Base(host, port, ssl, timeout, onerror) {
     if (timeout && timeout > 0) {
       intervalId = window.setInterval(() => this.send(`${protocol.live}1`), timeout * 1000);
     }
-    this.setRole();
+    this.setRole().catch(() => {});
     if (delayMsgs.length) {
       delayMsgs.forEach(({ msg, id }) => socket.send(`${msg}#${id}`));
       delayMsgs.length = 0;
@@ -101,7 +101,11 @@ function Base(host, port, ssl, timeout, onerror) {
     if (id && typeof promiseCallback[id] !== 'undefined') {
       const item = promiseCallback[id];
       window.clearTimeout(item.timeoutId);
-      item.resolve(message);
+      if (message.indexOf(protocol.error) > -1) {
+        item.reject(new Error(message.substr(protocol.error.length)));
+      } else {
+        item.resolve(message);
+      }
       delete promiseCallback[id];
       // console.log('delete promiseCallback[id]', promiseCallback);
     }
@@ -112,7 +116,7 @@ function Base(host, port, ssl, timeout, onerror) {
   this.sessionId = () => sessionId;
   this.readyState = () => socket.readyState;
   this.setRole = function () {
-    this.send(`${protocol.role}${role}/${this.name}:${this.password}`);
+    return this.send2(`${protocol.role}${role}/${this.name}:${this.password}`).then((data) => data.substr(protocol.role.length) === role);
   }
   this.on = function(type, func, revmoe) {
     switch (type) {
@@ -158,6 +162,7 @@ function Base(host, port, ssl, timeout, onerror) {
         }, timeout && timeout > 0 ? timeout * 1000 : 5000);
         promiseCallback[id] = {
           resolve,
+          reject,
           timeoutId
         };
       }

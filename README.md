@@ -155,6 +155,7 @@ on()
 sessionId()
 
 @description: set role & name & password
+@return {Promise<Boolean>} success or fail
 setRole()
 
 @description: send data
